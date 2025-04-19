@@ -36,67 +36,31 @@
         ❌ add errorless Go compilation to tests
         ❌ make sure that the failing tests fail for the right reason - inspect and partially match the errors
     ✅ custom types unify because they are all collapsed to Unit, generate some unique type underwater
-    ✅ config forms
-      ✅ "fmt" is imported when unused because of no discriminated unions (not enums, they do not need a visitor!) and causes a compiler error
-      ✅ define spec
-        ✅ `keyof`
-        ✅ Fields type
-        ✅ Config type with fields field and an extra predicate for the digital communication
-        ✅ Fields enum api
-        ✅ Main type (name, surname, birthday, email, subscribe to newsletter)
-        ✅ Form for the config type
-        ✅ Form for the main type
-        ✅ Visibility predicates on email and subscribe to newsletter
-        ✅ Tabs as a visibility expression
-      ✅ Parse
-        ✅ keyof -> inline type fields as union case if possible, error otherwise
-          ✅ represent preloaded types as a special ExprType.Placeholder
-          ✅ any ExprType.Placeholder left -> error
-        ✅ tabs group can be either a list of fields or an expression
-      ✅ TypeCheck
-        ✅ validate the type of the expression as `Set<Enum>` where `Enum` is a subset of the field names of the type
+    ❌ BE `noop`s should be eliminated—anything with a const should be made into a delta unit/delta never
+    ❌ prepare sample with detail view, isFilterable, isSortable
+      ❌ C1A | C1B | C1C = record    config for C1
+      ❌ C2A | C2B | C2C          config for C2
+      ❌ C2A = table, C2B = lazy field, C2C = maybe lazy field with tables inside, C2D = field shown if C2B and C2C are loaded and contain some flag to true
     ❌ lookup/lazy lookup support
       ❌ field renderer just like List, with valueRenderer inside
       ❌ also take as input an entity api -> implicitly pass the selected row ID
       ❌ type is identical to List[T]
-      ❌ add a Lazy type in the go-config
+      ❌ add a `Lookup[E]` type in the go-config
+        ❌ it typechecks as `Option[E]`
         ❌ check that dotnet test still works properly
+        ❌ the BE contains an instance of `Async[E]` as well as an `Id` sent to the API
+          ❌ the type of the `Id` is specified in the go-config
+      ❌ add a MaybeLookup type in the go-config
+        ❌ it typechecks as `Option[Option[E]]`
+        ❌ check that dotnet test still works properly
+        ❌ the BE contains an instance of `Async[Option[E]]` as well as an `Id` sent to the API
+          ❌ the type of the `Id` is specified in the go-config
       ❌ (try) load upon render
     ❌ tables support
       ❌ columns have optional extra booleans "IsFilterable", "IsSortable"
       ❌ add disabledColumns, just like visibleColumns
       ❌ detail view
       ✅ spec
-        ✅ renderer
-        ✅ columns
-        ✅ visibility
-        ✅ API
-        ✅ launcher with getMore
-        ✅ field renderer with getMore
-      ✅ parse
-        ✅ Table type
-        ✅ `apis::tables`
-        ✅ Table is a new type of form, not body
-          ✅ ProcessedType -> ExprType ([RowType] in particular)
-          ✅ after fixing this, rename every bit of the FormBody structure and substructures (Fields -> Record, for example)
-        ✅ Table renderer (new type of form)
-          ✅ columns
-          ✅ api at instantiation site, not in form
-            ✅ REMOVE PLACEHOLDER API IN RENDERER
-          ✅ visible
-            ✅ add InlinedColumns case, parse it explicitly
-        ✅ new table launcher type with table API
-        ✅ the renderer of a table needs an extra API field
-        ✅ typecheck the visible columns
-      ✅ force an Id of type string or guid
-      ✅ codegen
-        ✅ go-config
-        ✅ underlying table types and operations
-          ✅ GET[Id] Id x DeltaRow
-          ✅ PATCH[Id] Id x DeltaRow
-          ✅ POST[Id] Id x DeltaRow
-          ✅ DELETE[Id] Id x DeltaRow
-        ✅ paginated Table object
     ❌ form parser file is too long
       ❌ split off the renderers parsers
       ❌ split off the ExprType decomposition patterns
@@ -136,15 +100,14 @@
     ❌ no more primitives, only custom types
       ❌ custom types should have their algebra of operators
     ❌ allow using tuple renderers with records
-    ❌ add paginated lists
     ❌ add lazy fields
     ❌ add union renderers
+      ❌ as top-level forms as well as nested
     ❌ why do codegen errors (related to the writers) show up twice?
     ❌ add a renderer decorator to forms
       ❌ get rid of tuple renderer
     ❌ improvements to the generated Golang code
       ❌ add unit tests for all the go Deltas
-      ❌ generate prefilled tuple match functions when some parameters are Readonly types
       ❌ generate constructors with the `new{ ... }` syntax, not the field-by-field assignment
       ❌ make the deltas encapsulated
         ❌ use `private_` as a prefix for the patterns
@@ -155,7 +118,6 @@
       ❌ the injected types generate unused delta types
       ❌ all delta and writer type names should be sanitized
     ❌ the validator is now mature
-    ❌ validate that tabs are exhaustive in the fields - if not, show a warning with the missing fields
     ❌ define live webservice variant
       ❌ in separate repo
         ❌ move the Golang codegen there after extracting the intermediate representation for the codegen
