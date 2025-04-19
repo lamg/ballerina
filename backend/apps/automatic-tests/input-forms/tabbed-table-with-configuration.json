@@ -28,6 +28,12 @@
           "fun": "OptionLookup",
           "args": ["Team"]
         },
+        "MainGroup":{
+          "fun": "Lookup",
+          "args": [
+            "UserGroup"
+          ]
+        },
         "UserGroups":{
           "fun": "TableLookup",
           "args": [
@@ -104,6 +110,13 @@
         "entities": {
           "TeamApi": {
             "type": "Team",
+            "option": true,
+            "methods": [
+              "get", "update", "create", "delete"
+            ]
+          },
+          "UserGroupApi": {
+            "type": "UserGroup",
             "methods": [
               "get", "update", "create", "delete"
             ]
@@ -115,10 +128,12 @@
   "forms": {
     "activeUsers": {
       "type": "User",
-      "renderer": "finiteTable",
+      "renderer": "table",
       "columns": {
         "Name": {
-          "renderer": "string"
+          "renderer": "string",
+          "isSortable": false,
+          "isFilterable": false
         },
         "Surname": {
           "renderer": "string"
@@ -127,32 +142,37 @@
           "renderer": "string"
         }
       },
-      "detailView":{ 
-        "columns": {
+      "detailView": {
+        "fields": {
           "Birthday": {
             "renderer": "date"
           },
-          "UserGroups":{
+          "UserGroups": {
             "renderer": "userGroups",
             "detailApi": ["User", "tables", "UserGroupsApi"]
           },
-          "Team":{
+          "Team": {
             "renderer": "optionLookup",
-            "elementRenderer": "team",
+            "valueRenderer": "team",
             "detailApi": ["User", "entities", "TeamApi"]
+          },
+          "UserGroup": {
+            "renderer": "lookup",
+            "valueRenderer": "userGroup",
+            "detailApi": ["User", "entities", "UserGroupApi"]
           },
           "Activities": {
             "renderer": "activities",
             "detailApi": ["User", "tables", "ActivitiesApi"]
           },
           "visibleColumns": ["Birthday", "UserGroups", "Team", "Activities"]
-       }
+        }
       },
       "visibleColumns": ["Name", "Surname", "Birthday", "Email"]
     },
     "inactiveUsers": {
       "type": "User",
-      "renderer": "streamingTable",
+      "renderer": "table",
       "columns": {
         "Name": {
           "renderer": "string"
@@ -171,8 +191,20 @@
     },
     "userGroups": {
       "type": "UserGroup",
-      "renderer": "streamingTable",
+      "renderer": "table",
       "columns": {
+        "Name": {
+          "renderer": "string"
+        },
+        "Description": {
+          "renderer": "string"
+        }
+      },
+      "visibleColumns": ["Name", "Description"]
+    },
+    "userGroup": {
+      "type": "UserGroup",
+      "fields": {
         "Name": {
           "renderer": "string"
         },
@@ -184,7 +216,7 @@
     },
     "activities": {
       "type": "Activity",
-      "renderer": "streamingTable",
+      "renderer": "table",
       "columns": {
         "Description": {
           "renderer": "string"

@@ -36,11 +36,9 @@
         ❌ add errorless Go compilation to tests
         ❌ make sure that the failing tests fail for the right reason - inspect and partially match the errors
     ✅ custom types unify because they are all collapsed to Unit, generate some unique type underwater
-    ❌ BE `noop`s should be eliminated—anything with a const should be made into a delta unit/delta never
-    ❌ prepare sample with detail view, isFilterable, isSortable
-      ❌ C1A | C1B | C1C = record    config for C1
-      ❌ C2A | C2B | C2C          config for C2
-      ❌ C2A = table, C2B = lazy field, C2C = maybe lazy field with tables inside, C2D = field shown if C2B and C2C are loaded and contain some flag to true
+    ✅ prepare sample with detail view, isFilterable, isSortable
+      ✅ C1A | C1B | C1C = record    config for C1
+      ✅ C2A | C2B | C2C          config for C2
     ❌ lookup/lazy lookup support
       ❌ field renderer just like List, with valueRenderer inside
       ❌ also take as input an entity api -> implicitly pass the selected row ID
@@ -55,12 +53,13 @@
         ❌ check that dotnet test still works properly
         ❌ the BE contains an instance of `Async[Option[E]]` as well as an `Id` sent to the API
           ❌ the type of the `Id` is specified in the go-config
-      ❌ (try) load upon render
     ❌ tables support
       ❌ columns have optional extra booleans "IsFilterable", "IsSortable"
       ❌ add disabledColumns, just like visibleColumns
       ❌ detail view
+      ❌ detail apis
       ✅ spec
+    ❌ BE `noop`s should be eliminated—anything with a const should be made into a delta unit/delta never
     ❌ form parser file is too long
       ❌ split off the renderers parsers
       ❌ split off the ExprType decomposition patterns
