@@ -139,7 +139,8 @@ module Model =
       DeltaTypeName: string
       SupportedRenderers:
         {| Enum: Set<string>
-           Stream: Set<string> |} }
+           Stream: Set<string>
+           Plain: Set<string> |} }
 
   and CodegenConfigSetDef =
     { GeneratedTypeName: string
@@ -298,6 +299,7 @@ module Model =
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
+         Details: Option<FormFields>
          Columns: Map<string, FieldConfig>
          VisibleColumns: FormGroup
          RowType: ExprType |}
@@ -360,9 +362,27 @@ module Model =
          Elements: List<NestedRenderer>
       //  Children: RendererChildren
       |}
+    | OptionRenderer of
+      {| Option: Renderer
+         Some: NestedRenderer
+         None: NestedRenderer
+      //  Children: RendererChildren
+      |}
     | ListRenderer of
       {| List: Renderer
          Element: NestedRenderer
+      //  Children: RendererChildren
+      |}
+    | OneRenderer of
+      {| One: Renderer
+         Value: NestedRenderer
+         OneApiId: TypeId * string
+      //  Children: RendererChildren
+      |}
+    | ManyRenderer of
+      {| Many: Renderer
+         Element: NestedRenderer
+         ManyApiId: TypeId * string
       //  Children: RendererChildren
       |}
     // | TableRenderer of

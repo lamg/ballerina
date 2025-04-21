@@ -1,5 +1,8 @@
 {
   "types": {
+    "GlobalConfiguration": {
+      "fields": {}
+    },
     "UserGroup": {
       "fields": {
         "Id": "guid",
@@ -23,10 +26,11 @@
       }
     },
     "Activity": {
+      "const": true,
       "fields": {
         "Id": "guid",
         "Log": "string",
-        "When": "Date"
+        "Timestamp": "Date"
       }
     },
     "User": {
@@ -119,6 +123,242 @@
           }
         }
       }
+    }
+  },
+  "forms": {
+    "job": {
+      "type": "Job",
+      "fields": {
+        "Name": {
+          "renderer": "string",
+          "label": "Name"
+        },
+        "Description": {
+          "renderer": "string",
+          "label": "Description"
+        },
+        "Salary": {
+          "renderer": "float64",
+          "label": "Salary"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "Name",
+                  "Description",
+                  "Salary"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "team": {
+      "type": "Team",
+      "fields": {
+        "Name": {
+          "renderer": "string",
+          "label": "Name"
+        },
+        "Description": {
+          "renderer": "string",
+          "label": "Description"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "Name",
+                  "Description"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "groups": {
+      "type": "UserGroup",
+      "renderer": "table",
+      "columns": {
+        "Name": {
+          "renderer": "string",
+          "label": "Name"
+        },
+        "Description": {
+          "renderer": "string",
+          "label": "Description"
+        }
+      },
+      "visibleColumns": [
+        "Name",
+        "Description"
+      ]
+    },
+    "activities": {
+      "type": "Activity",
+      "renderer": "table",
+      "columns": {
+        "Log": {
+          "renderer": "string",
+          "label": "Name"
+        },
+        "Timestamp": {
+          "renderer": "date",
+          "label": "Timestamp"
+        }
+      },
+      "visibleColumns": [
+        "Log",
+        "Timestamp"
+      ]
+    },
+    "inactiveUsers": {
+      "type": "User",
+      "renderer": "table",
+      "columns": {
+        "Email": {
+          "renderer": "string",
+          "label": "Email"
+        }
+      },
+      "visibleColumns": [
+        "Email"
+      ]
+    },
+    "activeUsers": {
+      "type": "User",
+      "renderer": "table",
+      "columns": {
+        "Email": {
+          "renderer": "string",
+          "label": "Email"
+        }
+      },
+      "details": {
+        "fields": {
+          "Name": {
+            "renderer": "string",
+            "label": "Name"
+          },
+          "Surname": {
+            "renderer": "string",
+            "label": "Surname"
+          },
+          "Job": {
+            "renderer": "readonlyOption",
+            "noneRenderer": {
+              "renderer": "unit",
+              "label": "No Job"
+            },
+            "someRenderer": {
+              "renderer": "one",
+              "valueRenderer": {
+                "renderer": "job"
+              },
+              "api": [
+                "User",
+                "UserJobApi"
+              ],
+              "label": "Job"
+            }
+          },
+          "Team": {
+            "renderer": "one",
+            "valueRenderer": {
+              "renderer": "team"
+            },
+            "api": [
+              "User",
+              "UserTeamApi"
+            ],
+            "label": "Team"
+          },
+          "UserGroups": {
+            "renderer": "userGroups",
+            "api": [
+              "User",
+              "many",
+              "UserGroupsApi"
+            ],
+            "label": "User Groups"
+          },
+          "Activities": {
+            "renderer": "activities",
+            "api": [
+              "User",
+              "many",
+              "UserActivitiesApi"
+            ],
+            "label": "User Groups"
+          }
+        },
+        "tabs": {
+          "main": {
+            "columns": {
+              "main": {
+                "groups": {
+                  "main": [
+                    "Name",
+                    "Surname",
+                    "Job",
+                    "Team",
+                    "UserGroups",
+                    "Activities"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "visibleColumns": [
+        "Email"
+      ]
+    },
+    "users": {
+      "type": "Users",
+      "fields": {
+        "Active": {
+          "renderer": "activeUsers",
+          "api": "ActiveUsersApi",
+          "label": "Active Users"
+        },
+        "Inactive": {
+          "renderer": "inactiveUsers",
+          "api": "InactiveUsersApi",
+          "label": "Inactive Users"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "Active",
+                  "Inactive"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "users": {
+      "kind": "passthrough",
+      "form": "users",
+      "configType": "GlobalConfiguration"
     }
   }
 }

@@ -245,9 +245,23 @@ module Runner =
             state {
               let! columnsJson = columnsJson |> JsonValue.AsRecord |> state.OfSum
               let! rendererJson = fields |> state.TryFindField "renderer"
+              let! detailsJson = fields |> state.TryFindField "details" |> state.Catch |> state.Map(Sum.toOption)
               let! renderer = rendererJson |> JsonValue.AsString |> state.OfSum
               let! config = state.GetContext()
               let! t = state.TryFindType formTypeId.TypeName
+
+              let! detailsJson =
+                detailsJson
+                |> Option.map (fun detailsJson ->
+                  state {
+                    let! detailsFields = detailsJson |> JsonValue.AsRecord |> state.OfSum
+                    return! FormFields.Parse detailsFields
+                  })
+                |> state.RunOption
+
+              // if detailsJson.IsSome then
+              // do Console.WriteLine detailsJson.ToFSharpString
+              // do Console.ReadLine() |> ignore
 
               if config.Table.SupportedRenderers |> Set.contains renderer |> not then
                 return! state.Throw(Errors.Singleton $"Error: cannot find table renderer {renderer}")
@@ -270,6 +284,7 @@ module Runner =
                 return
                   {| Columns = columns
                      RowType = t.Type
+                     Details = None
                      Renderer = renderer
                      VisibleColumns = visibleColumns |}
                   |> FormBody.Table
@@ -631,8 +646,6 @@ module Runner =
 
         for lookupName, lookupJson in lookups do
           let! lookupApi = LookupApi.Parse lookupName lookupJson
-          do Console.WriteLine (lookupName, lookupJson, lookupApi).ToFSharpString
-          do Console.ReadLine() |> ignore
           do! state.SetState(ParsedFormsContext.Updaters.Apis(FormApis.Updaters.Lookups(Map.add lookupName lookupApi)))
 
         return ()

@@ -61,7 +61,8 @@
       ],
       "Stream": [
         "defaultInfiniteStream", "streamSingleselection"
-      ]
+      ],
+      "Plain":["option", "readonlyOption"]
     },
     "DefaultConstructor": "ballerina.None"
   },

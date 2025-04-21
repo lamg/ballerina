@@ -44,6 +44,7 @@
         ✅ one
         ✅ many
         ✅ add to top level, merge, and push out the resulting merged JSON
+      ❌ option renderer
       ❌ table
         ❌ detail view
         ❌ "isFilterable", "isSortable" on columns
@@ -53,9 +54,10 @@
       ❌ field
         ❌ containerRenderer
     ❌ validation
-      ❌ apis
-        ❌ one
-        ❌ many
+      ❌ table
+        ❌ detail view
+        ❌ fields of type `One`, `Many` require a `one` or `many` api
+        ❌ a `Many` field may bind to a `Table` renderer
     ❌ codegen
       ❌ identical to entities and tables, but with an extra Id of type of the parent entity
       ❌ disambiguated by name of both `E` and `F`
@@ -78,6 +80,7 @@
       ✅ split off the ExprType decomposition patterns
     ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
     ❌ cleanup
+      ❌ use `OneApiId`, `ManyApiId`, etc. as type-safe keys in `OneRenderer` and `ManyRenderer`
       ❌ use `EnumApiId`, `StreamApiId`, etc. as type-safe keys in the `FormConfigApis`
       ❌ there is a lot of repetition in the validation of the visibility fields selector
         ❌ basically from Expr -> EnumCases (so excluding proper unions) is a reusable ExprType.AsEnumCases

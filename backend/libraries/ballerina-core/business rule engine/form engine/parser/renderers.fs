@@ -174,6 +174,26 @@ module Renderers =
                       Type = ExprType.SumType(leftRenderer.Renderer.Type, rightRenderer.Renderer.Type) }
                  Left = leftRenderer
                  Right = rightRenderer |}
+        elif config.Option.SupportedRenderers.Plain |> Set.contains s then
+          let! someRendererJson = parentJsonFields |> sum.TryFindField "someRenderer" |> state.OfSum
+          let! someRenderer = NestedRenderer.Parse someRendererJson
+
+          let! noneRendererJson = parentJsonFields |> sum.TryFindField "noneRenderer" |> state.OfSum
+          let! noneRenderer = NestedRenderer.Parse noneRendererJson
+
+          let res =
+            OptionRenderer
+              {| Option =
+                  PrimitiveRenderer
+                    { PrimitiveRendererName = s
+                      PrimitiveRendererId = Guid.CreateVersion7()
+                      Type = ExprType.OptionType someRenderer.Renderer.Type }
+                 Some = someRenderer
+                 None = noneRenderer |}
+
+          do Console.WriteLine res.ToFSharpString
+          do Console.ReadLine() |> ignore
+          return res
         elif config.List.SupportedRenderers |> Set.contains s then
           let! elementRendererJson = parentJsonFields |> sum.TryFindField "elementRenderer" |> state.OfSum
           let! elementRenderer = NestedRenderer.Parse elementRendererJson
