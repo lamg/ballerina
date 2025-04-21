@@ -30,7 +30,9 @@
     <Compile Include="errors/model.fs" />
     <Compile Include="core/json/model.fs" />
     <Compile Include="business rule engine/expr/model.fs" />
+    <Compile Include="business rule engine/expr/patterns.fs" />
     <Compile Include="business rule engine/exprtype/model.fs" />
+    <Compile Include="business rule engine/exprtype/patterns.fs" />
     <Compile Include="business rule engine/model.fs" />
     <Compile Include="business rule engine/exprtype/unification.fs" />
     <Compile Include="business rule engine/exprtype/typeCheck.fs" />
@@ -40,7 +42,12 @@
     <Compile Include="business rule engine/rule/preprocess.fs" />
     <Compile Include="business rule engine/rule/execute.fs" />
     <Compile Include="business rule engine/form engine/model.fs" />
-    <Compile Include="business rule engine/form engine/parser.fs" />
+    <Compile Include="business rule engine/form engine/parser/model.fs" />
+    <Compile Include="business rule engine/form engine/parser/patterns.fs" />
+    <Compile Include="business rule engine/form engine/parser/expr.fs" />
+    <Compile Include="business rule engine/form engine/parser/exprtype.fs" />
+    <Compile Include="business rule engine/form engine/parser/renderers.fs" />
+    <Compile Include="business rule engine/form engine/parser/runner.fs" />
     <Compile Include="business rule engine/form engine/validator.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/model.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/context.fs" />

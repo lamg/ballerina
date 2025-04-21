@@ -4,6 +4,7 @@ module Main =
 
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
+  open Ballerina.DSL.Expr.Types.Patterns
   open Ballerina.State.WithError
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.FormEngine.Parser

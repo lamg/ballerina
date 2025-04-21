@@ -16,7 +16,9 @@ module Runner =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.FormEngine.Parser
+  open Ballerina.DSL.FormEngine.Parser.Model
+  open Ballerina.DSL.FormEngine.Parser.Patterns
+  open Ballerina.DSL.FormEngine.Parser.Runner
   open Ballerina.DSL.FormEngine.Validator
   open Ballerina.DSL.FormEngine.Codegen.Golang.Generator.Main
   open System.Text.RegularExpressions
@@ -92,7 +94,7 @@ module Runner =
                 StreamDisplayValueFieldName = "displayValue" }
 
           match
-            ((ParsedFormsContext.Parse generatedLanguageSpecificConfig jsonValues).run (codegenConfig, initialContext))
+            (ParsedFormsContext.Parse generatedLanguageSpecificConfig jsonValues).run (codegenConfig, initialContext)
           with
           | Left(mergedJson, Some parsedForms) ->
             match
@@ -126,7 +128,8 @@ module Runner =
                                   [| ("enumOptions", JsonValue.Record mergedJson.Enums)
                                      ("searchableStreams", JsonValue.Record mergedJson.Streams)
                                      ("entities", JsonValue.Record mergedJson.Entities)
-                                     ("tables", JsonValue.Record mergedJson.Tables) |])
+                                     ("tables", JsonValue.Record mergedJson.Tables)
+                                     ("lookups", JsonValue.Record mergedJson.Lookups) |])
                                ("forms", JsonValue.Record mergedJson.Forms)
                                ("launchers", JsonValue.Record mergedJson.Launchers) |]
                           ) |}

@@ -39,49 +39,52 @@
     ✅ prepare sample with detail view, isFilterable, isSortable
       ✅ C1A | C1B | C1C = record    config for C1
       ✅ C2A | C2B | C2C          config for C2
-    ❌ lookup/lazy lookup support
-      ❌ field renderer just like List, with valueRenderer inside
-      ❌ also take as input an entity api -> implicitly pass the selected row ID
-      ❌ type is identical to List[T]
-      ❌ add a `Lookup[E]` type in the go-config
-        ❌ it typechecks as `Option[E]`
-        ❌ check that dotnet test still works properly
-        ❌ the BE contains an instance of `Async[E]` as well as an `Id` sent to the API
-          ❌ the type of the `Id` is specified in the go-config
-      ❌ add a MaybeLookup type in the go-config
-        ❌ it typechecks as `Option[Option[E]]`
-        ❌ check that dotnet test still works properly
-        ❌ the BE contains an instance of `Async[Option[E]]` as well as an `Id` sent to the API
-          ❌ the type of the `Id` is specified in the go-config
-    ❌ tables support
-      ❌ columns have optional extra booleans "IsFilterable", "IsSortable"
-      ❌ add disabledColumns, just like visibleColumns
-      ❌ detail view
-      ❌ detail apis
-      ✅ spec
+    ❌ parser
+      ✅ apis
+        ✅ one
+        ✅ many
+        ✅ add to top level, merge, and push out the resulting merged JSON
+      ❌ table
+        ❌ detail view
+        ❌ "isFilterable", "isSortable" on columns
+        ❌ disabled columns
+      ❌ form
+        ❌ containerRenderer
+      ❌ field
+        ❌ containerRenderer
+    ❌ validation
+      ❌ apis
+        ❌ one
+        ❌ many
+    ❌ codegen
+      ❌ identical to entities and tables, but with an extra Id of type of the parent entity
+      ❌ disambiguated by name of both `E` and `F`
+      ❌ plus a `GetE:Id -> E` where `E` is the relevant entity
+      ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`
+      ❌ if the parent entity has no Id:string|guid, give an error
+    ❌ visibility predicates
+      ❌ inside a detail view renderers we validate with global, root, row, local
+      ❌ one
+      ❌ many
+    ❌ one/many should also support adding existing items (from a stream or a table)
     ❌ BE `noop`s should be eliminated—anything with a const should be made into a delta unit/delta never
     ❌ form parser file is too long
-      ❌ split off the renderers parsers
-      ❌ split off the ExprType decomposition patterns
-    ❌ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
-    ❌ there is a lot of repetition in the validation of the visibility fields selector
-      ❌ basically from Expr -> EnumCases (so excluding proper unions) is a reusable ExprType.AsEnumCases
-    ❌ FormDeclarationType should be a TypeId/TypeName, because at that level of the form the type given is a name <- more type safety
+      ✅ renderer.type should be in patterns, not runner
+      ✅ split off the renderers parsers
+      ✅ split off the expr parsers
+      ✅ split off the exprtype parsers
+      ❌ split off the api parsers
+      ❌ split off the main parsers
+      ✅ split off the ExprType decomposition patterns
+    ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
+    ❌ cleanup
+      ❌ use `EnumApiId`, `StreamApiId`, etc. as type-safe keys in the `FormConfigApis`
+      ❌ there is a lot of repetition in the validation of the visibility fields selector
+        ❌ basically from Expr -> EnumCases (so excluding proper unions) is a reusable ExprType.AsEnumCases
+      ❌ FormDeclarationType should be a TypeId/TypeName, because at that level of the form the type given is a name <- more type safety
     ❌ entities PATCH - gets single value and path of change
-      ✅ support Id:string in CollectionReference, not just Id:Guid
-      ✅ lots of no-ops in deltas
-        ✅ add ˋReadonlyˋ flag to record and custom types
-        ✅ do not generate PATCH callbacks for those fields and cases
-      ✅ names of generic parameters of the deltas is inconsistent and should be fixed
+      ❌ remove legacy references to the Writers, it is all about deltas
       ❌ the BE can guide by providing deserializer callbacks for all the required types, such as `tryParseAsUpdateableEntityX:Raw -> UpdateableEntityX`
-      ✅ define the FE deltas, make an array of Deltas[Unit] foldable into a single Deltas[DeltaBase]
-        ✅ verify that the DeltaTransfer FE structure deserializes correctly to the BE structure
-        ✅ PATCH from the FE
-      ✅ separate more codegen modules to extra files
-        ✅ custom types
-        ✅ imports
-        ✅ `generated types`
-        ✅ ToGolang in the typename and method name is redundant, remove it
     ❌ add documentation (Confluence)
       ❌ high-level workings of the form engine
       ❌ high-level anatomy of a spec

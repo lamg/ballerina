@@ -4,11 +4,14 @@ module Validator =
 
   open Ballerina.Core.Object
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.FormEngine.Parser
+  open Ballerina.DSL.FormEngine.Parser.Model
+  open Ballerina.DSL.FormEngine.Parser.Patterns
+  open Ballerina.DSL.FormEngine.Parser.Runner
   open Ballerina.DSL.Model
   open Ballerina.Collections.Tuple
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
+  open Ballerina.DSL.Expr.Types.Patterns
   open Ballerina.DSL.Expr.Types.TypeCheck
   open Ballerina.DSL.Expr.Types.Unification
   open Ballerina.Collections.Sum
@@ -25,21 +28,12 @@ module Validator =
     static member Validate (ctx: ParsedFormsContext) (formType: ExprType) (fr: Renderer) : Sum<ExprType, Errors> =
       let (!) = Renderer.Validate ctx formType
 
-      let validateChildren (children: RendererChildren) =
-        children.Fields
-        |> Seq.map (fun e -> e.Value)
-        |> Seq.map (FieldConfig.Validate ctx formType)
-        |> sum.All
-        |> Sum.map ignore
-
       sum {
         match fr with
         | Renderer.EnumRenderer(enum, enumRenderer) ->
           do! !enumRenderer |> Sum.map ignore
           return fr.Type
-        | Renderer.FormRenderer(f, body, children) ->
-          do! children |> validateChildren
-
+        | Renderer.FormRenderer(f, body) ->
           // let! f = ctx.TryFindForm f.FormName
           // do System.Console.WriteLine f.FormName
           // do System.Console.WriteLine(f.Body |> FormBody.ProcessedType)
@@ -50,8 +44,6 @@ module Validator =
         | Renderer.ListRenderer(l) ->
           do! !l.List |> Sum.map ignore
           do! !l.Element.Renderer |> Sum.map ignore
-
-          do! l.Children |> validateChildren
 
           return fr.Type
         // | Renderer.TableRenderer(t) ->
@@ -66,18 +58,14 @@ module Validator =
           do! !m.Key.Renderer |> Sum.map ignore
           do! !m.Value.Renderer |> Sum.map ignore
 
-          do! m.Children |> validateChildren
-
           return fr.Type
         | Renderer.SumRenderer(s) ->
           do! !s.Sum |> Sum.map ignore
           do! !s.Left.Renderer |> Sum.map ignore
           do! !s.Right.Renderer |> Sum.map ignore
 
-          do! s.Children |> validateChildren
           return fr.Type
         | Renderer.PrimitiveRenderer p ->
-          do! p.Children |> validateChildren
 
           return fr.Type
         | Renderer.StreamRenderer(stream, streamRenderer) ->
@@ -85,11 +73,9 @@ module Validator =
           do! !streamRenderer |> Sum.map ignore
           return fr.Type
         | Renderer.TupleRenderer t ->
-          do! t.Children |> validateChildren
           do! t.Elements |> Seq.map (fun e -> !e.Renderer) |> sum.All |> Sum.map ignore
           return fr.Type
         | Renderer.UnionRenderer r ->
-          do! r.Children |> validateChildren
 
           do!
             r.Cases
@@ -102,6 +88,7 @@ module Validator =
 
   and NestedRenderer with
     static member ValidatePredicates
+      validateFormConfigPredicates
       (ctx: ParsedFormsContext)
       (globalType: ExprType)
       (rootType: ExprType)
@@ -118,30 +105,27 @@ module Validator =
           |> Seq.map (VarName.Create <*> id)
           |> Map.ofSeq
 
-        do! Renderer.ValidatePredicates ctx globalType rootType localType r.Renderer
+        do! Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType r.Renderer
       }
 
   and Renderer with
     static member ValidatePredicates
+      validateFormConfigPredicates
       (ctx: ParsedFormsContext)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
       (r: Renderer)
       : State<Unit, Unit, ValidationState, Errors> =
-      let (!) = Renderer.ValidatePredicates ctx globalType rootType localType
-      let (!!) = NestedRenderer.ValidatePredicates ctx globalType rootType localType
+      let (!) =
+        Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType
 
-      let validateChildrenPredicates (children: RendererChildren) =
-        children.Fields
-        |> Seq.map (fun e -> e.Value)
-        |> Seq.map (FieldConfig.ValidatePredicates ctx globalType rootType localType)
-        |> state.All
-        |> state.Map ignore
+      let (!!) =
+        NestedRenderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType
 
       state {
         match r with
-        | Renderer.PrimitiveRenderer p -> do! p.Children |> validateChildrenPredicates
+        | Renderer.PrimitiveRenderer p -> return ()
         | Renderer.EnumRenderer(_, e) -> return! !e
         | Renderer.TupleRenderer e ->
           do! !e.Tuple
@@ -149,12 +133,10 @@ module Validator =
           for element in e.Elements do
             do! !!element
 
-          do! e.Children |> validateChildrenPredicates
         | Renderer.ListRenderer e ->
           do! !e.List
           do! !!e.Element
 
-          do! e.Children |> validateChildrenPredicates
         // | Renderer.TableRenderer e ->
         //   do! !e.Table
         //   do! !!e.Row
@@ -165,30 +147,25 @@ module Validator =
           do! !!kv.Key
           do! !!kv.Value
 
-          do! kv.Children |> validateChildrenPredicates
         | Renderer.SumRenderer s ->
           do! !s.Sum
           do! !!s.Left
           do! !!s.Right
 
-          do! s.Children |> validateChildrenPredicates
         | Renderer.StreamRenderer(_, e) -> return! !e
-        | Renderer.FormRenderer(f, e, children) ->
+        | Renderer.FormRenderer(f, e) ->
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! s = state.GetState()
 
-          do! children |> validateChildrenPredicates
-
-          do! FormConfig.ValidatePredicates ctx globalType rootType f
+          do! validateFormConfigPredicates ctx globalType rootType f
         | Renderer.UnionRenderer cs ->
           do! !cs.Union
-
-          do! cs.Children |> validateChildrenPredicates
 
           do!
             cs.Cases
             |> Seq.map (fun e -> e.Value)
-            |> Seq.map (fun c -> Renderer.ValidatePredicates ctx globalType rootType c.Type c)
+            |> Seq.map (fun c ->
+              Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType c.Type c)
             |> state.All
             |> state.Map ignore
       }
@@ -277,7 +254,7 @@ module Validator =
             |> state.OfSum
         | _ -> return ()
 
-        do! Renderer.ValidatePredicates ctx globalType rootType localType fc.Renderer
+        do! Renderer.ValidatePredicates FormConfig.ValidatePredicates ctx globalType rootType localType fc.Renderer
       }
       |> state.WithErrorContext $"...when validating field predicates for {fc.FieldName}"
 
@@ -437,7 +414,14 @@ module Validator =
               |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find type case {case.Key}")
               |> state.OfSum
 
-            do! Renderer.ValidatePredicates ctx globalType rootType typeCase.Fields case.Value
+            do!
+              Renderer.ValidatePredicates
+                FormConfig.ValidatePredicates
+                ctx
+                globalType
+                rootType
+                typeCase.Fields
+                case.Value
         | FormBody.Table table ->
           let rowType = localType
           let! rowTypeFields = rowType |> ExprType.AsRecord |> state.OfSum

@@ -140,6 +140,34 @@ module WritersAndDeltas =
 
             do! state.SetState(add w)
             return w
+          | ExprType.OneType(a) ->
+            let! wa = ExprType.ToWriter { WriterName = $"{writerName.WriterName}_Value" } a
+
+            let! a_annotation = toGolangTypeAnnotation a
+
+            let w =
+              { Name = { WriterName = $"OneWriter[{wa.DeltaTypeName}]" }
+                DeltaTypeName = $"{codegenConfig.One.DeltaTypeName}[{a_annotation}, {wa.DeltaTypeName}]"
+                Type = t
+                Components = Map.empty
+                Kind = WriterKind.Imported }
+
+            do! state.SetState(add w)
+            return w
+          | ExprType.ManyType(a) ->
+            let! wa = ExprType.ToWriter { WriterName = $"{writerName.WriterName}_Value" } a
+
+            let! a_annotation = toGolangTypeAnnotation a
+
+            let w =
+              { Name = { WriterName = $"ManyWriter[{wa.DeltaTypeName}]" }
+                DeltaTypeName = $"{codegenConfig.Many.DeltaTypeName}[{a_annotation}, {wa.DeltaTypeName}]"
+                Type = t
+                Components = Map.empty
+                Kind = WriterKind.Imported }
+
+            do! state.SetState(add w)
+            return w
           | ExprType.SetType(a) ->
             let! wa = ExprType.ToWriter { WriterName = $"{writerName.WriterName}_Element" } a
 

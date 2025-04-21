@@ -44,6 +44,8 @@ module Model =
     | SumType of ExprType * ExprType
     | TupleType of List<ExprType>
     | OptionType of ExprType
+    | OneType of ExprType
+    | ManyType of ExprType
     | ListType of ExprType
     | TableType of ExprType
     | SetType of ExprType
@@ -89,6 +91,8 @@ module Model =
       | ExprType.TableType t -> $"Table<{!t}>"
       | ExprType.SetType t -> $"Set<{!t}>"
       | ExprType.OptionType t -> $"Option<{!t}>"
+      | ExprType.OneType t -> $"One<{!t}>"
+      | ExprType.ManyType t -> $"Many<{!t}>"
       | ExprType.MapType(k, v) -> $"Map<{!k},{!v}>"
       | ExprType.SumType(l, r) -> $"Sum<{!l},{!r}>"
       | ExprType.TupleType ts -> $"({ts |> List.map (!) |> (fun s -> String.Join(',', s))})"
@@ -126,7 +130,9 @@ module Model =
       | ExprType.ListType t
       | ExprType.TableType t
       | ExprType.SetType t
-      | ExprType.OptionType t -> !t
+      | ExprType.OptionType t
+      | ExprType.OneType t
+      | ExprType.ManyType t -> !t
       | ExprType.LookupType t -> Set.singleton t
       | ExprType.MapType(k, v) -> !k + !v
       | ExprType.SumType(l, r) -> !l + !r
@@ -155,6 +161,8 @@ module Model =
       | ExprType.TableType t -> ExprType.TableType(!t)
       | ExprType.SetType t -> ExprType.SetType(!t)
       | ExprType.OptionType t -> ExprType.OptionType(!t)
+      | ExprType.OneType t -> ExprType.OneType(!t)
+      | ExprType.ManyType t -> ExprType.ManyType(!t)
       | ExprType.MapType(k, v) -> ExprType.MapType(!k, !v)
       | ExprType.SumType(l, r) -> ExprType.SumType(!l, !r)
       | ExprType.TupleType ts -> ExprType.TupleType(!!ts)

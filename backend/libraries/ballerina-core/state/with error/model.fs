@@ -161,7 +161,7 @@ module WithError =
 
     member inline state.All5 p1 p2 p3 p4 p5 =
       state.All2 p1 (state.All2 p2 (state.All2 p3 (state.All2 p4 p5)))
-      |> state.Map Tuple.fromNested4
+      |> state.Map Tuple.fromNested5
 
     member inline state.Either<'a, 'c, 's, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
       (p1: State<'a, 'c, 's, 'e>)

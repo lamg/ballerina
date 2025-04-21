@@ -43,6 +43,12 @@ module DefaultValues =
           let! r = rt |> ExprType.GenerateTypeAnnotation
           let! ldef = ExprType.GenerateDefaultValue(lt)
           return $"{cfg.Sum.LeftConstructor}[{l}, {r}]({ldef})"
+        | ExprType.OneType(e) ->
+          let! e = e |> ExprType.GenerateTypeAnnotation
+          return $"{cfg.One.DefaultConstructor}[{e}]()"
+        | ExprType.ManyType(e) ->
+          let! e = e |> ExprType.GenerateTypeAnnotation
+          return $"{cfg.Many.DefaultConstructor}[{e}]()"
         | ExprType.OptionType(e) ->
           let! e = e |> ExprType.GenerateTypeAnnotation
           return $"{cfg.Option.DefaultConstructor}[{e}]()"

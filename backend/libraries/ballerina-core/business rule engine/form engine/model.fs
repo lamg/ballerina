@@ -17,6 +17,8 @@ module Model =
       Set: CodegenConfigSetDef
       List: CodegenConfigListDef
       Table: CodegenConfigTableDef
+      One: CodegenConfigOneDef
+      Many: CodegenConfigManyDef
       Map: CodegenConfigMapDef
       Sum: CodegenConfigSumDef
       Tuple: List<TupleCodegenConfigTypeDef>
@@ -54,7 +56,6 @@ module Model =
   and TupleCodegenConfigTypeDef =
     { Ariety: int
       GeneratedTypeName: string
-
       DeltaTypeName: string
       SupportedRenderers: Set<string>
       Constructor: string
@@ -64,7 +65,6 @@ module Model =
 
   and CodegenConfigUnitDef =
     { GeneratedTypeName: string
-
       DeltaTypeName: string
       RequiredImport: Option<string>
       DefaultConstructor: string
@@ -73,7 +73,22 @@ module Model =
   and CodegenConfigListDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
+      DeltaTypeName: string
+      SupportedRenderers: Set<string>
+      DefaultConstructor: string
+      MappingFunction: string }
 
+  and CodegenConfigOneDef =
+    { GeneratedTypeName: string
+      RequiredImport: Option<string>
+      DeltaTypeName: string
+      SupportedRenderers: Set<string>
+      DefaultConstructor: string
+      MappingFunction: string }
+
+  and CodegenConfigManyDef =
+    { GeneratedTypeName: string
+      RequiredImport: Option<string>
       DeltaTypeName: string
       SupportedRenderers: Set<string>
       DefaultConstructor: string
@@ -82,7 +97,6 @@ module Model =
   and CodegenConfigTableDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
-
       DeltaTypeName: string
       SupportedRenderers: Set<string>
       DefaultConstructor: string
@@ -91,7 +105,6 @@ module Model =
   and CodegenConfigMapDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
-
       DeltaTypeName: string
       DefaultConstructor: string
       SupportedRenderers: Set<string> }
@@ -99,7 +112,6 @@ module Model =
   and CodegenConfigSumDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
-
       DeltaTypeName: string
       LeftConstructor: string
       RightConstructor: string
@@ -107,7 +119,6 @@ module Model =
 
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
-
       DeltaTypeName: string
       DefaultValue: string
       RequiredImport: Option<string>
@@ -173,91 +184,77 @@ module Model =
       {| ConfigType: TypeId
          TableApi: TableApiId |}
 
-  and EnumApiId = { EnumName: string; EnumId: Guid }
+
+  and EnumApiId = { EnumName: string }
 
   and EnumApi =
     { EnumName: string
-      EnumId: Guid
       TypeId: TypeId
       UnderlyingEnum: TypeId }
 
-    static member Id(e: EnumApi) =
-      { EnumName = e.EnumName
-        EnumId = e.EnumId }
+    static member Id(e: EnumApi) = { EnumName = e.EnumName }
 
     static member Create(n, t, c) : EnumApi =
       { EnumName = n
         TypeId = t
-        EnumId = Guid.CreateVersion7()
         UnderlyingEnum = c }
 
     static member Type(a: EnumApi) : TypeId = a.TypeId
 
-  and StreamApiId = { StreamName: string; StreamId: Guid }
+  and StreamApiId = { StreamName: string }
 
   and StreamApi =
     { StreamName: string
-      StreamId: Guid
       TypeId: TypeId }
 
-    static member Id(e: StreamApi) =
-      { StreamName = e.StreamName
-        StreamId = e.StreamId }
+    static member Id(e: StreamApi) = { StreamName = e.StreamName }
 
-    static member Create(n, t) : StreamApi =
-      { StreamName = n
-        TypeId = t
-        StreamId = Guid.CreateVersion7() }
+    static member Create(n, t) : StreamApi = { StreamName = n; TypeId = t }
 
     static member Type(a: StreamApi) : TypeId = a.TypeId
 
-  and EntityApiId = { EntityName: string; EntityId: Guid }
+  and EntityApiId = { EntityName: string }
 
   and EntityApi =
     { EntityName: string
-      EntityId: Guid
       TypeId: TypeId }
 
-    static member Id(e: EntityApi) =
-      { EntityName = e.EntityName
-        EntityId = e.EntityId }
+    static member Id(e: EntityApi) = { EntityName = e.EntityName }
 
-    static member Create(n, t) : EntityApi =
-      { EntityName = n
-        TypeId = t
-        EntityId = Guid.CreateVersion7() }
+    static member Create(n, t) : EntityApi = { EntityName = n; TypeId = t }
 
     static member Type(a: EntityApi) : TypeId = a.TypeId
 
-  and TableApiId = { TableName: string; TableId: Guid }
+  and TableApiId = { TableName: string }
 
   and TableApi =
     { TableName: string
-      TableId: Guid
       TypeId: TypeId }
 
-    static member Id(e: TableApi) =
-      { TableName = e.TableName
-        TableId = e.TableId }
+    static member Id(e: TableApi) = { TableName = e.TableName }
 
-    static member Create(n, t) : TableApi =
-      { TableName = n
-        TypeId = t
-        TableId = Guid.CreateVersion7() }
+    static member Create(n, t) : TableApi = { TableName = n; TypeId = t }
 
-    static member Type(a: TableApi) : TypeId = a.TypeId
+  and LookupApi =
+    { EntityName: string
+      Enums: Map<string, EnumApi>
+      Streams: Map<string, StreamApi>
+      Ones: Map<string, EntityApi * Set<CrudMethod>>
+      Manys: Map<string, TableApi> }
 
   and FormApis =
     { Enums: Map<string, EnumApi>
       Streams: Map<string, StreamApi>
       Entities: Map<string, EntityApi * Set<CrudMethod>>
-      Tables: Map<string, TableApi> }
+      Tables: Map<string, TableApi>
+      Lookups: Map<string, LookupApi> }
 
     static member Empty =
       { Enums = Map.empty
         Streams = Map.empty
         Entities = Map.empty
-        Tables = Map.empty }
+        Tables = Map.empty
+        Lookups = Map.empty }
 
     static member Updaters =
       {| Enums = fun u s -> { s with FormApis.Enums = u (s.Enums) }
@@ -272,7 +269,11 @@ module Model =
          Tables =
           fun u s ->
             { s with
-                FormApis.Tables = u (s.Tables) } |}
+                FormApis.Tables = u (s.Tables) }
+         Lookups =
+          fun u s ->
+            { s with
+                FormApis.Lookups = u (s.Lookups) } |}
 
   and FormConfigId = { FormName: string; FormId: Guid }
 
@@ -352,15 +353,18 @@ module Model =
       {| Map: Renderer
          Key: NestedRenderer
          Value: NestedRenderer
-         Children: RendererChildren |}
+      //  Children: RendererChildren
+      |}
     | TupleRenderer of
       {| Tuple: Renderer
          Elements: List<NestedRenderer>
-         Children: RendererChildren |}
+      //  Children: RendererChildren
+      |}
     | ListRenderer of
       {| List: Renderer
          Element: NestedRenderer
-         Children: RendererChildren |}
+      //  Children: RendererChildren
+      |}
     // | TableRenderer of
     //   {| Table: Renderer
     //      Row: NestedRenderer
@@ -369,14 +373,16 @@ module Model =
       {| Sum: Renderer
          Left: NestedRenderer
          Right: NestedRenderer
-         Children: RendererChildren |}
+      //Children: RendererChildren
+      |}
     | EnumRenderer of EnumApiId * Renderer
     | StreamRenderer of StreamApiId * Renderer
-    | FormRenderer of FormConfigId * ExprType * RendererChildren
+    | FormRenderer of FormConfigId * ExprType //* RendererChildren
     | UnionRenderer of
       {| Union: Renderer
          Cases: Map<CaseName, Renderer>
-         Children: RendererChildren |}
+      //Children: RendererChildren
+      |}
 
   and NestedRenderer =
     { Label: Option<string>
@@ -392,13 +398,14 @@ module Model =
     { PrimitiveRendererName: string
       PrimitiveRendererId: Guid
       Type: ExprType
-      Children: RendererChildren }
+    // Children: RendererChildren
+    }
 
     static member ToPrimitiveRendererId(r: PrimitiveRenderer) =
       { PrimitiveRendererName = r.PrimitiveRendererName
         PrimitiveRendererId = r.PrimitiveRendererId }
 
-  and RendererChildren = { Fields: Map<string, FieldConfig> }
+  // and RendererChildren = { Fields: Map<string, FieldConfig> }
 
   type FormPredicateValidationHistoryItem =
     { Form: FormConfigId

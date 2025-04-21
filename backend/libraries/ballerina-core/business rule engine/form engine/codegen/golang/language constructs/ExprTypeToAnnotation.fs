@@ -117,6 +117,30 @@ module TypeAnnotations =
             |> state.SetState
 
           return $"{config.Option.GeneratedTypeName}[{e}]"
+        | ExprType.OneType e ->
+          let! e = !e
+
+          do!
+            config.One.RequiredImport
+            |> Option.toList
+            |> Set.ofList
+            |> Set.union
+            |> GoCodeGenState.Updaters.UsedImports
+            |> state.SetState
+
+          return $"{config.One.GeneratedTypeName}[{e}]"
+        | ExprType.ManyType e ->
+          let! e = !e
+
+          do!
+            config.Many.RequiredImport
+            |> Option.toList
+            |> Set.ofList
+            |> Set.union
+            |> GoCodeGenState.Updaters.UsedImports
+            |> state.SetState
+
+          return $"{config.Many.GeneratedTypeName}[{e}]"
         | ExprType.MapType(k, v) ->
           let! k = !k
           let! v = !v

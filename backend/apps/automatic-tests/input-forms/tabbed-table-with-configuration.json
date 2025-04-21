@@ -1,60 +1,72 @@
 {
   "types": {
-    "GlobalConfig": {
-      "fields": {}
-    },
     "UserGroup": {
       "fields": {
-        "Id": "string",
+        "Id": "guid",
+        "Name": "string",
+        "Description": "string"
+      }
+    },
+    "Job": {
+      "fields": {
+        "Id": "guid",
+        "Name": "string",
+        "Description": "string",
+        "Salary": "Float64"
+      }
+    },
+    "Team": {
+      "fields": {
+        "Id": "guid",
         "Name": "string",
         "Description": "string"
       }
     },
     "Activity": {
       "fields": {
-        "Id": "string",
-        "Description": "string",
-        "Timestamp": "Date"
+        "Id": "guid",
+        "Log": "string",
+        "When": "Date"
       }
     },
     "User": {
       "fields": {
-        "Id": "string",
+        "Id": "guid",
         "Name": "string",
         "Surname": "string",
-        "Birthday": "Date",
         "Email": "string",
-        "Team":{
-          "fun": "OptionLookup",
-          "args": ["Team"]
-        },
-        "MainGroup":{
-          "fun": "Lookup",
+        "Job": {
+          "fun": "Option",
           "args": [
-            "UserGroup"
+            {
+              "fun": "One",
+              "args": [
+                "Job"
+              ]
+            }
           ]
         },
-        "UserGroups":{
-          "fun": "TableLookup",
+        "Team": {
+          "fun": "One",
+          "args": [
+            "Team"
+          ]
+        },
+        "UserGroups": {
+          "fun": "Many",
           "args": [
             "UserGroup"
           ]
         },
         "Activities": {
-          "fun": "TableLookup",
+          "fun": "Many",
           "args": [
             "Activity"
           ]
         }
       }
     },
-    "Team": {
-      "fields": {
-        "Name":"string",
-        "Description":"string"
-      }
-    },
-    "UsersSetup": {
+    "Users": {
       "fields": {
         "Active": {
           "fun": "Table",
@@ -72,23 +84,6 @@
     }
   },
   "apis": {
-    "enumOptions": {
-    },
-    "entities": {
-      "GlobalConfigApi": {
-        "type": "GlobalConfig",
-        "methods": [
-          "get"
-        ]
-      },
-      "UsersSetupApi": {
-        "type": "UsersSetup",
-        "methods": [
-          "get",
-          "update"
-        ]
-      }
-    },
     "tables": {
       "ActiveUsersApi": {
         "type": "User"
@@ -97,194 +92,33 @@
         "type": "User"
       }
     },
-    "lookups":{
+    "lookups": {
       "User": {
-        "tables":{
+        "one": {
+          "UserTeamApi": {
+            "type": "Team",
+            "methods": [
+              "get",
+              "update"
+            ]
+          },
+          "UserJobApi": {
+            "type": "Job",
+            "methods": [
+              "get",
+              "update"
+            ]
+          }
+        },
+        "many": {
           "UserGroupsApi": {
             "type": "UserGroup"
           },
-          "ActivitiesApi": {
+          "UserActivitiesApi": {
             "type": "Activity"
           }
-        },
-        "entities": {
-          "TeamApi": {
-            "type": "Team",
-            "option": true,
-            "methods": [
-              "get", "update", "create", "delete"
-            ]
-          },
-          "UserGroupApi": {
-            "type": "UserGroup",
-            "methods": [
-              "get", "update", "create", "delete"
-            ]
-          }
         }
       }
-    }
-  },
-  "forms": {
-    "activeUsers": {
-      "type": "User",
-      "renderer": "table",
-      "columns": {
-        "Name": {
-          "renderer": "string",
-          "isSortable": false,
-          "isFilterable": false
-        },
-        "Surname": {
-          "renderer": "string"
-        },
-        "Email": {
-          "renderer": "string"
-        }
-      },
-      "detailView": {
-        "fields": {
-          "Birthday": {
-            "renderer": "date"
-          },
-          "UserGroups": {
-            "renderer": "userGroups",
-            "detailApi": ["User", "tables", "UserGroupsApi"]
-          },
-          "Team": {
-            "renderer": "optionLookup",
-            "valueRenderer": "team",
-            "detailApi": ["User", "entities", "TeamApi"]
-          },
-          "UserGroup": {
-            "renderer": "lookup",
-            "valueRenderer": "userGroup",
-            "detailApi": ["User", "entities", "UserGroupApi"]
-          },
-          "Activities": {
-            "renderer": "activities",
-            "detailApi": ["User", "tables", "ActivitiesApi"]
-          },
-          "visibleColumns": ["Birthday", "UserGroups", "Team", "Activities"]
-        }
-      },
-      "visibleColumns": ["Name", "Surname", "Birthday", "Email"]
-    },
-    "inactiveUsers": {
-      "type": "User",
-      "renderer": "table",
-      "columns": {
-        "Name": {
-          "renderer": "string"
-        },
-        "Surname": {
-          "renderer": "string"
-        },
-        "Birthday": {
-          "renderer": "date"
-        },
-        "Email": {
-          "renderer": "string"
-        }
-      },
-      "visibleColumns": ["Name", "Surname", "Birthday", "Email"]
-    },
-    "userGroups": {
-      "type": "UserGroup",
-      "renderer": "table",
-      "columns": {
-        "Name": {
-          "renderer": "string"
-        },
-        "Description": {
-          "renderer": "string"
-        }
-      },
-      "visibleColumns": ["Name", "Description"]
-    },
-    "userGroup": {
-      "type": "UserGroup",
-      "fields": {
-        "Name": {
-          "renderer": "string"
-        },
-        "Description": {
-          "renderer": "string"
-        }
-      },
-      "visibleColumns": ["Name", "Description"]
-    },
-    "activities": {
-      "type": "Activity",
-      "renderer": "table",
-      "columns": {
-        "Description": {
-          "renderer": "string"
-        },
-        "Timestamp": {
-          "renderer": "date"
-        }
-      },
-      "visibleColumns": ["Description", "Timestamp"]
-    },
-    "team": {
-      "type": "Team",
-      "fields": {
-        "Name": {
-          "renderer": "string"
-        },
-        "Description": {
-          "renderer": "string"
-        }
-      },
-      "tabs": {
-        "main": {
-          "columns": {
-            "main": {
-              "groups": {
-                "main": [
-                  "Name",
-                  "Description"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "usersSetup": {
-      "type": "UsersSetup",
-      "fields": {
-        "Active": {
-          "renderer": "activeUsers",
-          "api": "ActiveUsersApi"
-          },
-        "Inactive": {
-          "renderer": "inactiveUsers",
-          "api": "InactiveUsersApi"
-        }
-      },
-      "tabs": {
-        "main": {
-          "columns": {
-            "main": {
-              "groups": {
-                "main": [
-                  "Active",
-                  "Inactive"
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "launchers": {
-    "UsersSetup": {
-      "kind": "passthrough",
-      "form": "UsersSetup",
-      "configType": "GlobalConfig"
     }
   }
 }
