@@ -61,11 +61,10 @@
         ✅ a TableFormRenderer uses the right API
         ✅ a ManyFormRenderer uses the right API
         ✅ a ManyFormRenderer detail type and the API lookup type are the same
-    ❌ visibility predicates
-      ❌ visible and disabled inside columns or detail view are not validated
-      ❌ inside a detail view renderers we validate with global, root, row, local
-      ❌ one
-      ❌ many
+    ✅ visibility predicates
+      ✅ visible and disabled inside columns or detail view are not validated
+      ✅ inside a detail view renderers we validate with global, root, local
+      ✅ inside a column renderer we validate with global, root, but neither row nor local
     ❌ codegen
       ❌ identical to entities and tables, but with an extra Id of type of the parent entity
       ❌ disambiguated by name of both `E` and `F`

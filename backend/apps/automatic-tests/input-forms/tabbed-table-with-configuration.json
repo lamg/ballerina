@@ -198,8 +198,7 @@
           "renderer": "string",
           "label": "Description",
           "isFilterable":false,
-          "isSortable":false,
-          "disabled":"burutu"
+          "isSortable":false
         }
       },
       "visibleColumns": [
@@ -245,7 +244,8 @@
       "columns": {
         "Email": {
           "renderer": "string",
-          "label": "Email"
+          "label": "Email",
+          "disabled":true
         }
       },
       "details": {
@@ -253,11 +253,13 @@
         "fields": {
           "Name": {
             "renderer": "string",
-            "label": "Name"
+            "label": "Name",
+            "disabled":true
           },
           "Surname": {
             "renderer": "string",
-            "label": "Surname"
+            "label": "Surname",
+            "disabled":true
           },
           "Job": {
             "renderer": "readonlyOption",

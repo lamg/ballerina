@@ -292,6 +292,7 @@ module Validator =
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
+      (includeLocalTypeInScope: bool)
       (fc: FieldConfig)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
@@ -300,7 +301,11 @@ module Validator =
             tryFindField = fun _ -> None }
 
         let vars =
-          [ ("global", globalType); ("root", rootType); ("local", localType) ]
+          [ ("global", globalType); ("root", rootType) ]
+          @ (if includeLocalTypeInScope then
+               [ ("local", localType) ]
+             else
+               [])
           |> Seq.map (VarName.Create <*> id)
           |> Map.ofSeq
 
@@ -357,7 +362,7 @@ module Validator =
       state {
         for f in formFields.Fields do
           do!
-            FieldConfig.ValidatePredicates ctx globalType rootType localType f.Value
+            FieldConfig.ValidatePredicates ctx globalType rootType localType true f.Value
             |> state.Map ignore
 
         for tab in formFields.Tabs.FormTabs |> Map.values do
@@ -539,7 +544,19 @@ module Validator =
               |> Map.tryFindWithError (column.Key) "fields" "fields"
               |> state.OfSum
 
-            do! FieldConfig.ValidatePredicates ctx globalType rootType columnType column.Value.FieldConfig
+            do! FieldConfig.ValidatePredicates ctx globalType rootType columnType false column.Value.FieldConfig
+
+          match table.Details with
+          | Some details ->
+            for fieldConfig in details.FormFields.Fields |> Map.values do
+              let! fieldType =
+                rowTypeFields
+                |> Map.tryFindWithError fieldConfig.FieldName "fields" "fields"
+                |> state.OfSum
+
+              do! FieldConfig.ValidatePredicates ctx globalType rootType fieldType true fieldConfig
+
+          | None -> return ()
 
           match table.VisibleColumns with
           | Inlined _ -> return ()
