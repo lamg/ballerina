@@ -56,13 +56,14 @@ module Runner =
           state.All2 (fields |> state.TryFindField "renderer") (fields |> state.TryFindField "visible" |> state.Catch)
 
         let! disabledJson = sum.TryFindField "disabled" fields |> state.OfSum |> state.Catch
+        let disabledJson = disabledJson |> Sum.toOption
         let! renderer = Renderer.Parse fields rendererJson
         let! visible = visibleJson |> Sum.toOption |> Option.map Expr.Parse |> state.RunOption
 
         let visible =
           visible |> Option.defaultWith (fun () -> Expr.Value(Value.ConstBool true))
 
-        let! disabled = disabledJson |> Sum.toOption |> Option.map (Expr.Parse) |> state.RunOption
+        let! disabled = disabledJson |> Option.map (Expr.Parse) |> state.RunOption
 
         let fc =
           { FieldName = fieldName
@@ -255,7 +256,23 @@ module Runner =
                 |> Option.map (fun detailsJson ->
                   state {
                     let! detailsFields = detailsJson |> JsonValue.AsRecord |> state.OfSum
-                    return! FormFields.Parse detailsFields
+
+                    let! containerRendererJson =
+                      detailsFields
+                      |> state.TryFindField "containerRenderer"
+                      |> state.Catch
+                      |> state.Map(Sum.toOption)
+
+                    let! (containerRenderer: Option<string>) =
+                      containerRendererJson
+                      |> Option.map (JsonValue.AsString >> state.OfSum)
+                      |> state.RunOption
+
+                    let! details = FormFields.Parse detailsFields
+
+                    return
+                      {| FormFields = details
+                         ContainerRenderer = containerRenderer |}
                   })
                 |> state.RunOption
 
@@ -270,16 +287,41 @@ module Runner =
                   columnsJson
                   |> Seq.map (fun (columnName, columnJson) ->
                     state {
-                      // let! caseJson = caseJson |> JsonValue.AsRecord |> state.OfSum
+                      let! columnFields = columnJson |> JsonValue.AsRecord |> state.OfSum
                       let! columnBody = FieldConfig.Parse columnName columnJson
-                      return columnName, columnBody
+
+                      let! isFilterable =
+                        state.Either
+                          (columnFields |> sum.TryFindField "isFilterable" |> state.OfSum)
+                          (JsonValue.Boolean true |> state.Return)
+
+                      let! isSortable =
+                        state.Either
+                          (columnFields |> sum.TryFindField "isSortable" |> state.OfSum)
+                          (JsonValue.Boolean true |> state.Return)
+
+                      let! isFilterable, isSortable =
+                        state.All2
+                          (isFilterable |> JsonValue.AsBoolean |> state.OfSum)
+                          (isSortable |> JsonValue.AsBoolean |> state.OfSum)
+
+                      return
+                        columnName,
+                        { FieldConfig = columnBody
+                          IsFilterable = isFilterable
+                          IsSortable = isSortable }
                     }
                     |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing table column {columnName}")))
                   |> state.All
                   |> state.Map(Map.ofSeq)
 
                 let! visibleColumnsJson = fields |> state.TryFindField "visibleColumns"
-                let! visibleColumns = FormConfig.ParseGroup "visibleColumns" columns visibleColumnsJson
+
+                let! visibleColumns =
+                  FormConfig.ParseGroup
+                    "visibleColumns"
+                    (columns |> Map.map (fun _ c -> c.FieldConfig))
+                    visibleColumnsJson
 
                 return
                   {| Columns = columns
@@ -795,6 +837,18 @@ module Runner =
       state {
         for formName, formJson in formsJson do
           let! formType = FormConfig.PreParse formName formJson
+          let! formFields = formJson |> JsonValue.AsRecord |> state.OfSum
+
+          let! containerRendererJson =
+            formFields
+            |> state.TryFindField "containerRenderer"
+            |> state.Catch
+            |> state.Map(Sum.toOption)
+
+          let! (containerRenderer: Option<string>) =
+            containerRendererJson
+            |> Option.map (JsonValue.AsString >> state.OfSum)
+            |> state.RunOption
 
           do!
             state.SetState(
@@ -811,7 +865,8 @@ module Runner =
                            Cases = Map.empty
                            UnionType = formType.Type |}
                     FormId = Guid.CreateVersion7()
-                    FormName = formName }
+                    FormName = formName
+                    ContainerRenderer = containerRenderer }
               )
             )
 

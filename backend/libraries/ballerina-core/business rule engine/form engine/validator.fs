@@ -53,7 +53,7 @@ module Validator =
             match t.Details with
             | Some detailsForm ->
               do!
-                detailsForm.Fields
+                detailsForm.FormFields.Fields
                 |> Map.values
                 |> Seq.map (FieldConfig.Validate ctx apiRowType.Type)
                 |> sum.All
@@ -89,7 +89,7 @@ module Validator =
             match t.Details with
             | Some detailsForm ->
               do!
-                detailsForm.Fields
+                detailsForm.FormFields.Fields
                 |> Map.values
                 |> Seq.map (FieldConfig.Validate ctx apiRowType.Type)
                 |> sum.All
@@ -167,7 +167,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (r: NestedRenderer)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         let schema =
           { tryFindEntity = fun _ -> None
@@ -189,7 +189,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (r: Renderer)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       let (!) =
         Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType
 
@@ -293,7 +293,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (fc: FieldConfig)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         let schema =
           { tryFindEntity = fun _ -> None
@@ -353,7 +353,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (formFields: FormFields)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         for f in formFields.Fields do
           do!
@@ -437,7 +437,12 @@ module Validator =
       |> Sum.map ignore
 
   and FormBody with
-    static member Validate (ctx: ParsedFormsContext) (localType: ExprType) (body: FormBody) : Sum<Unit, Errors> =
+    static member Validate
+      (codegen: CodeGenConfig)
+      (ctx: ParsedFormsContext)
+      (localType: ExprType)
+      (body: FormBody)
+      : Sum<Unit, Errors> =
       sum {
         match localType, body with
         | ExprType.UnionType typeCases, FormBody.Union formCases ->
@@ -470,11 +475,25 @@ module Validator =
             )
         | _, FormBody.Record fields -> do! FormFields.Validate ctx localType fields.Fields
         | _, FormBody.Table table ->
+          match table.Details with
+          | Some(details) ->
+            match details.ContainerRenderer with
+            | Some containerName ->
+              if codegen.ContainerRenderers |> Set.contains containerName |> not then
+                return!
+                  sum.Throw(
+                    Errors.Singleton $"Error: details form uses non-existing container renderer {containerName}"
+                  )
+              else
+                return ()
+            | None -> return ()
+          | None -> return ()
+
           return!
             sum.All(
               table.Columns
               |> Map.values
-              |> Seq.map (FieldConfig.Validate ctx localType)
+              |> Seq.map (fun c -> FieldConfig.Validate ctx localType c.FieldConfig)
               |> Seq.toList
             )
             |> Sum.map ignore
@@ -488,7 +507,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (body: FormBody)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         match body with
         | FormBody.Record fields -> do! FormFields.ValidatePredicates ctx globalType rootType localType fields.Fields
@@ -520,7 +539,7 @@ module Validator =
               |> Map.tryFindWithError (column.Key) "fields" "fields"
               |> state.OfSum
 
-            do! FieldConfig.ValidatePredicates ctx globalType rootType columnType column.Value
+            do! FieldConfig.ValidatePredicates ctx globalType rootType columnType column.Value.FieldConfig
 
           match table.VisibleColumns with
           | Inlined _ -> return ()
@@ -586,11 +605,26 @@ module Validator =
       }
 
   and FormConfig with
-    static member Validate (ctx: ParsedFormsContext) (formConfig: FormConfig) : Sum<Unit, Errors> =
+    static member Validate
+      (config: CodeGenConfig)
+      (ctx: ParsedFormsContext)
+      (formConfig: FormConfig)
+      : Sum<Unit, Errors> =
       sum {
         let formType = formConfig.Body |> FormBody.FormDeclarationType
 
-        do! FormBody.Validate ctx formType formConfig.Body
+        do! FormBody.Validate config ctx formType formConfig.Body
+
+        match formConfig.ContainerRenderer with
+        | Some containerName ->
+          if config.ContainerRenderers |> Set.contains containerName |> not then
+            return!
+              sum.Throw(
+                Errors.Singleton $"Error: {formConfig.FormName} uses non-existing container renderer {containerName}"
+              )
+          else
+            return ()
+        | None -> return ()
 
       }
       |> sum.WithErrorContext $"...when validating form config {formConfig.FormName}"
@@ -600,7 +634,7 @@ module Validator =
       (globalType: ExprType)
       (rootType: ExprType)
       (formConfig: FormConfig)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         let! s = state.GetState()
 
@@ -628,7 +662,7 @@ module Validator =
     static member Validate
       (ctx: ParsedFormsContext)
       (formLauncher: FormLauncher)
-      : State<Unit, Unit, ValidationState, Errors> =
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         let! formConfig = ctx.TryFindForm formLauncher.Form.FormName |> state.OfSum
 
@@ -831,7 +865,10 @@ module Validator =
       |> sum.WithErrorContext $"...when validating table {tableApi.TableName}"
 
   type ParsedFormsContext with
-    static member Validate codegenTargetConfig (ctx: ParsedFormsContext) : State<Unit, Unit, ValidationState, Errors> =
+    static member Validate
+      codegenTargetConfig
+      (ctx: ParsedFormsContext)
+      : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         do!
           sum.All(
@@ -866,8 +903,15 @@ module Validator =
         // do System.Console.WriteLine(ctx.Forms.ToFSharpString)
         // do System.Console.ReadLine() |> ignore
 
+        let! codegenConfig = state.GetContext()
+
         do!
-          sum.All(ctx.Forms |> Map.values |> Seq.map (FormConfig.Validate ctx) |> Seq.toList)
+          sum.All(
+            ctx.Forms
+            |> Map.values
+            |> Seq.map (FormConfig.Validate codegenConfig ctx)
+            |> Seq.toList
+          )
           |> Sum.map ignore
           |> state.OfSum
 

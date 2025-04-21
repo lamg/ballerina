@@ -114,3 +114,10 @@ module Sum =
       }
 
   let sum = SumBuilder()
+
+  type Sum<'a, 'b> with
+    static member (>>=)(p, q) =
+      sum {
+        let! x = p
+        return! q x
+      }

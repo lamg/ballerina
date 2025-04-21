@@ -32,7 +32,8 @@ module Model =
       EntityNameAndDeltaTypeMismatchError: CodegenConfigErrorDef
       EnumNotFoundError: CodegenConfigErrorDef
       InvalidEnumValueCombinationError: CodegenConfigErrorDef
-      StreamNotFoundError: CodegenConfigErrorDef }
+      StreamNotFoundError: CodegenConfigErrorDef
+      ContainerRenderers: Set<string> }
 
   and GenericType =
     | Option
@@ -281,7 +282,8 @@ module Model =
   and FormConfig =
     { FormName: string
       FormId: Guid
-      Body: FormBody }
+      Body: FormBody
+      ContainerRenderer: Option<string> }
 
     static member Name f = f.FormName
 
@@ -299,8 +301,8 @@ module Model =
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
-         Details: Option<FormFields>
-         Columns: Map<string, FieldConfig>
+         Details: Option<{| FormFields: FormFields; ContainerRenderer:Option<string> |}>
+         Columns: Map<string, Column>
          VisibleColumns: FormGroup
          RowType: ExprType |}
 
@@ -315,6 +317,11 @@ module Model =
       | Record f -> f.RecordType
       | Union c -> c.UnionType
       | Table t -> t.RowType |> ExprType.TableType
+
+  and Column =
+    { FieldConfig: FieldConfig
+      IsFilterable: bool
+      IsSortable: bool }
 
   and FormFields =
     { Fields: Map<string, FieldConfig>

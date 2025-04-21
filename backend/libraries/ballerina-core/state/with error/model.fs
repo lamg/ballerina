@@ -11,6 +11,7 @@ module WithError =
 
     member this.run(c, s) = let (State p) = this in p (c, s)
 
+
     static member map<'b> (f: 'a -> 'b) ((State p): State<'a, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
       State(fun s0 ->
         match p s0 with
@@ -196,3 +197,10 @@ module WithError =
       }
 
   let state = StateBuilder()
+
+  type State<'a, 'c, 's, 'e> with
+    static member (>>=)(p, q) =
+      state {
+        let! x = p
+        return! q x
+      }

@@ -99,7 +99,7 @@ module Runner =
           | Left(mergedJson, Some parsedForms) ->
             match
               (ParsedFormsContext.Validate generatedLanguageSpecificConfig parsedForms)
-                .run ((), { PredicateValidationHistory = Set.empty })
+                .run (codegenConfig, { PredicateValidationHistory = Set.empty })
             with
             | Left(validatedForms, _) ->
               match language with

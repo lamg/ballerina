@@ -160,6 +160,7 @@
     },
     "team": {
       "type": "Team",
+      "containerRenderer": "grayBackground",
       "fields": {
         "Name": {
           "renderer": "string",
@@ -195,7 +196,10 @@
         },
         "Description": {
           "renderer": "string",
-          "label": "Description"
+          "label": "Description",
+          "isFilterable":false,
+          "isSortable":false,
+          "disabled":"burutu"
         }
       },
       "visibleColumns": [
@@ -237,6 +241,7 @@
     "activeUsers": {
       "type": "User",
       "renderer": "table",
+      "containerRenderer":"highlighted",
       "columns": {
         "Email": {
           "renderer": "string",
@@ -244,6 +249,7 @@
         }
       },
       "details": {
+        "containerRenderer":"highlighted",
         "fields": {
           "Name": {
             "renderer": "string",

@@ -39,20 +39,20 @@
     ✅ prepare sample with detail view, isFilterable, isSortable
       ✅ C1A | C1B | C1C = record    config for C1
       ✅ C2A | C2B | C2C          config for C2
-    ❌ parser
+    ✅ parser
       ✅ apis
         ✅ one
         ✅ many
         ✅ add to top level, merge, and push out the resulting merged JSON
       ✅ option renderer
-      ❌ table
+      ✅ table
         ✅ detail view
-        ❌ "isFilterable", "isSortable" on columns
-        ❌ disabled columns
-      ❌ form
-        ❌ containerRenderer
-      ❌ field
-        ❌ containerRenderer
+          ✅ containerRenderer
+        ✅ "isFilterable", "isSortable" on columns
+        ✅ disabled columns via disabled:true (ensure it parses and typechecks normally)
+        ✅ containerRenderer
+      ✅ form
+        ✅ containerRenderer
     ✅ validation
       ✅ table
         ✅ detail view
@@ -61,16 +61,17 @@
         ✅ a TableFormRenderer uses the right API
         ✅ a ManyFormRenderer uses the right API
         ✅ a ManyFormRenderer detail type and the API lookup type are the same
+    ❌ visibility predicates
+      ❌ visible and disabled inside columns or detail view are not validated
+      ❌ inside a detail view renderers we validate with global, root, row, local
+      ❌ one
+      ❌ many
     ❌ codegen
       ❌ identical to entities and tables, but with an extra Id of type of the parent entity
       ❌ disambiguated by name of both `E` and `F`
       ❌ plus a `GetE:Id -> E` where `E` is the relevant entity
       ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`
       ❌ if the parent entity has no Id:string|guid, give an error
-    ❌ visibility predicates
-      ❌ inside a detail view renderers we validate with global, root, row, local
-      ❌ one
-      ❌ many
     ❌ one/many should also support adding existing items (from a stream or a table)
     ❌ BE `noop`s should be eliminated—anything with a const should be made into a delta unit/delta never
     ❌ form parser file is too long
@@ -83,6 +84,7 @@
       ✅ split off the ExprType decomposition patterns
     ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
     ❌ cleanup
+      ❌ add monadic operator (>>)
       ❌ are we checking that the stream and enum apis match the type of the field?
       ❌ use `OneApiId`, `ManyApiId`, etc. as type-safe keys in `OneRenderer` and `ManyRenderer`
         ❌ also `ManyApiId` should be used in `ManyFormRenderer`

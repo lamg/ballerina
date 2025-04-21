@@ -47,13 +47,6 @@ module Renderers =
         let! config = state.GetContext()
         let! (formsState: ParsedFormsContext) = state.GetState()
 
-        let! childrenJson =
-          parentJsonFields
-          |> sum.TryFindField "children"
-          |> sum.Catch(fun () -> JsonValue.Record([||]))
-          |> state.OfSum
-
-        // let! children = Renderer.ParseChildren childrenJson
         let! s = json |> JsonValue.AsString |> state.OfSum
 
         if config.Bool.SupportedRenderers |> Set.contains s then
