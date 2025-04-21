@@ -185,7 +185,7 @@
         }
       }
     },
-    "groups": {
+    "userGroups": {
       "type": "UserGroup",
       "renderer": "table",
       "columns": {
@@ -286,7 +286,6 @@
             "renderer": "userGroups",
             "api": [
               "User",
-              "many",
               "UserGroupsApi"
             ],
             "label": "User Groups"
@@ -295,7 +294,6 @@
             "renderer": "activities",
             "api": [
               "User",
-              "many",
               "UserActivitiesApi"
             ],
             "label": "User Groups"

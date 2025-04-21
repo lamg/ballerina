@@ -88,7 +88,11 @@ module Unification =
           | Some t' -> return! t =?= t'
         | ExprType.ListType(t1), ExprType.ListType(t2)
         | ExprType.SetType(t1), ExprType.SetType(t2)
-        | ExprType.OptionType(t1), ExprType.OptionType(t2) -> return! t1 =?= t2
+        | ExprType.OptionType(t1), ExprType.OptionType(t2)
+        | ExprType.OneType(t1), ExprType.OneType(t2) -> return! t1 =?= t2
+        | ExprType.TableType(t1), ExprType.ManyType(t2)
+        | ExprType.ManyType(t1), ExprType.TableType(t2)
+        | ExprType.ManyType(t1), ExprType.ManyType(t2) -> return! t1 =?= t2
         | ExprType.MapType(k1, v1), ExprType.MapType(k2, v2) ->
           let! partialUnifications = sum.All([ k1 =?= k2; v1 =?= v2 ])
           return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())

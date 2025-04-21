@@ -161,7 +161,7 @@ module WritersAndDeltas =
 
             let w =
               { Name = { WriterName = $"ManyWriter[{wa.DeltaTypeName}]" }
-                DeltaTypeName = $"{codegenConfig.Many.DeltaTypeName}[{a_annotation}, {wa.DeltaTypeName}]"
+                DeltaTypeName = $"{codegenConfig.Table.DeltaTypeName}[{a_annotation}, {wa.DeltaTypeName}]"
                 Type = t
                 Components = Map.empty
                 Kind = WriterKind.Imported }

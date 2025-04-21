@@ -33,6 +33,18 @@ module Patterns =
     member ctx.TryFindEnum name =
       ctx.Apis.Enums |> Map.tryFindWithError name "enum" name
 
+    member ctx.TryFindOne typeName name =
+      sum {
+        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "one" typeName
+        return! lookup.Ones |> Map.tryFindWithError name "one" name
+      }
+
+    member ctx.TryFindMany typeName name =
+      sum {
+        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "many" typeName
+        return! lookup.Manys |> Map.tryFindWithError name "many" name
+      }
+
     member ctx.TryFindStream name =
       ctx.Apis.Streams |> Map.tryFindWithError name "stream" name
 
@@ -95,11 +107,16 @@ module Patterns =
       | MapRenderer r -> ExprType.MapType(r.Key.Type, r.Value.Type)
       | SumRenderer r -> ExprType.SumType(r.Left.Type, r.Right.Type)
       | ListRenderer r -> ExprType.ListType r.Element.Type
+      | OptionRenderer r -> ExprType.OptionType r.Some.Type
+      | OneRenderer r -> ExprType.OneType r.Value.Type
+      | ManyRenderer r -> ExprType.ManyType r.Element.Type
       // | TableRenderer r -> ExprType.TableType r.Row.Type
       | EnumRenderer(_, r)
       | StreamRenderer(_, r) -> r.Type
       | TupleRenderer i -> ExprType.TupleType(i.Elements |> Seq.map (fun e -> e.Type) |> List.ofSeq)
-      | FormRenderer(f, t) -> t
+      | FormRenderer(f, t)
+      | TableFormRenderer(f, t, _)
+      | ManyFormRenderer(f, t, _, _) -> t
       | UnionRenderer r ->
         ExprType.UnionType(
           r.Cases

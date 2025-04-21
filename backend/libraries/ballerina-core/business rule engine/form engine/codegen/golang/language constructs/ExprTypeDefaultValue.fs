@@ -48,7 +48,7 @@ module DefaultValues =
           return $"{cfg.One.DefaultConstructor}[{e}]()"
         | ExprType.ManyType(e) ->
           let! e = e |> ExprType.GenerateTypeAnnotation
-          return $"{cfg.Many.DefaultConstructor}[{e}]()"
+          return $"{cfg.Table.DefaultConstructor}[{e}]()"
         | ExprType.OptionType(e) ->
           let! e = e |> ExprType.GenerateTypeAnnotation
           return $"{cfg.Option.DefaultConstructor}[{e}]()"

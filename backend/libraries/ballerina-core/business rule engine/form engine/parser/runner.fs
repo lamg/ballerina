@@ -250,7 +250,7 @@ module Runner =
               let! config = state.GetContext()
               let! t = state.TryFindType formTypeId.TypeName
 
-              let! detailsJson =
+              let! details =
                 detailsJson
                 |> Option.map (fun detailsJson ->
                   state {
@@ -284,7 +284,7 @@ module Runner =
                 return
                   {| Columns = columns
                      RowType = t.Type
-                     Details = None
+                     Details = details
                      Renderer = renderer
                      VisibleColumns = visibleColumns |}
                   |> FormBody.Table

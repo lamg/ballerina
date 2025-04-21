@@ -18,7 +18,7 @@ module Model =
       List: CodegenConfigListDef
       Table: CodegenConfigTableDef
       One: CodegenConfigOneDef
-      Many: CodegenConfigManyDef
+      // Many: CodegenConfigManyDef
       Map: CodegenConfigMapDef
       Sum: CodegenConfigSumDef
       Tuple: List<TupleCodegenConfigTypeDef>
@@ -86,13 +86,13 @@ module Model =
       DefaultConstructor: string
       MappingFunction: string }
 
-  and CodegenConfigManyDef =
-    { GeneratedTypeName: string
-      RequiredImport: Option<string>
-      DeltaTypeName: string
-      SupportedRenderers: Set<string>
-      DefaultConstructor: string
-      MappingFunction: string }
+  // and CodegenConfigManyDef =
+  //   { GeneratedTypeName: string
+  //     RequiredImport: Option<string>
+  //     DeltaTypeName: string
+  //     SupportedRenderers: Set<string>
+  //     DefaultConstructor: string
+  //     MappingFunction: string }
 
   and CodegenConfigTableDef =
     { GeneratedTypeName: string
@@ -398,6 +398,8 @@ module Model =
     | EnumRenderer of EnumApiId * Renderer
     | StreamRenderer of StreamApiId * Renderer
     | FormRenderer of FormConfigId * ExprType //* RendererChildren
+    | TableFormRenderer of FormConfigId * ExprType * TableApiId //* RendererChildren
+    | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
     | UnionRenderer of
       {| Union: Renderer
          Cases: Map<CaseName, Renderer>

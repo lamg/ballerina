@@ -85,20 +85,10 @@
     "DeltaTypeName": "ballerina.DeltaOption",
     "RequiredImport": "ballerina.com/core",
     "SupportedRenderers": [
-      "lazy"
+      "one"
     ],
     "MappingFunction": "ballerina.MapOption",
     "DefaultConstructor": "ballerina.DefaultOption"
-  },
-  "Many": {
-    "GeneratedTypeName": "ballerina.Table",
-    "DeltaTypeName": "ballerina.DeltaTable",
-    "RequiredImport": "ballerina.com/core",
-    "SupportedRenderers": [
-      "table"
-    ],
-    "MappingFunction": "ballerina.MapTable",
-    "DefaultConstructor": "ballerina.DefaultTable"
   },
   "List": {
     "GeneratedTypeName": "ballerina.Array",

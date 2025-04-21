@@ -29,6 +29,7 @@ module Model =
   and EntityIdentifier = One of Guid
 
   and Value =
+    | Unit
     | ConstInt of int
     | ConstFloat of float
     | ConstString of string
@@ -77,6 +78,7 @@ module Model =
   type Value with
     override v.ToString() =
       match v with
+      | Value.Unit -> "()"
       | Value.CaseCons(c, v) -> $"{c}({v})"
       | Value.ConstBool v -> v.ToString()
       | Value.ConstGuid v -> v.ToString()

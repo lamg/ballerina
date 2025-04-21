@@ -2,6 +2,7 @@ namespace Ballerina.DSL.FormEngine
 
 module Validator =
 
+  open System
   open Ballerina.Core.Object
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.FormEngine.Parser.Model
@@ -33,12 +34,84 @@ module Validator =
         | Renderer.EnumRenderer(enum, enumRenderer) ->
           do! !enumRenderer |> Sum.map ignore
           return fr.Type
-        | Renderer.FormRenderer(f, body) ->
-          // let! f = ctx.TryFindForm f.FormName
-          // do System.Console.WriteLine f.FormName
-          // do System.Console.WriteLine(f.Body |> FormBody.ProcessedType)
-          // do System.Console.WriteLine fr.Type
-          // do System.Console.ReadLine() |> ignore
+        | Renderer.FormRenderer(f, body) -> return fr.Type
+        | Renderer.TableFormRenderer(f, body, tableApiId) ->
+          let! f = ctx.TryFindForm f.FormName
+          let! api = ctx.TryFindTableApi tableApiId.TableName
+          let! apiRowType = ctx.TryFindType api.TypeId.TypeName
+
+          do!
+            ExprType.Unify
+              Map.empty
+              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+              fr.Type
+              (apiRowType.Type |> ExprType.TableType)
+            |> Sum.map ignore
+
+          match f.Body with
+          | FormBody.Table t ->
+            match t.Details with
+            | Some detailsForm ->
+              do!
+                detailsForm.Fields
+                |> Map.values
+                |> Seq.map (FieldConfig.Validate ctx apiRowType.Type)
+                |> sum.All
+                |> Sum.map ignore
+            | _ -> return ()
+          | _ -> return ()
+
+          return fr.Type
+        | Renderer.ManyFormRenderer(f, body, lookupTypeId, manyApiId) ->
+          let! f = ctx.TryFindForm f.FormName
+          let! api = ctx.TryFindMany lookupTypeId.TypeName manyApiId
+          let! apiRowType = ctx.TryFindType api.TypeId.TypeName
+          let! lookupType = ctx.TryFindType lookupTypeId.TypeName
+
+          do!
+            ExprType.Unify
+              Map.empty
+              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+              formType
+              lookupType.Type
+            |> Sum.map ignore
+
+          do!
+            ExprType.Unify
+              Map.empty
+              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+              fr.Type
+              (apiRowType.Type |> ExprType.TableType)
+            |> Sum.map ignore
+
+          match f.Body with
+          | FormBody.Table t ->
+            match t.Details with
+            | Some detailsForm ->
+              do!
+                detailsForm.Fields
+                |> Map.values
+                |> Seq.map (FieldConfig.Validate ctx apiRowType.Type)
+                |> sum.All
+                |> Sum.map ignore
+            | _ -> return ()
+          | _ -> return ()
+
+          return fr.Type
+        | Renderer.OneRenderer(l) ->
+          do! !l.One |> Sum.map ignore
+          do! !l.Value.Renderer |> Sum.map ignore
+
+          return fr.Type
+        | Renderer.ManyRenderer(l) ->
+          do! !l.Many |> Sum.map ignore
+          do! !l.Element.Renderer |> Sum.map ignore
+
+          return fr.Type
+        | Renderer.OptionRenderer(l) ->
+          do! !l.Option |> Sum.map ignore
+          do! !l.None.Renderer |> Sum.map ignore
+          do! !l.Some.Renderer |> Sum.map ignore
 
           return fr.Type
         | Renderer.ListRenderer(l) ->
@@ -133,6 +206,19 @@ module Validator =
           for element in e.Elements do
             do! !!element
 
+        | Renderer.OneRenderer e ->
+          do! !e.One
+          do! !!e.Value
+
+        | Renderer.ManyRenderer e ->
+          do! !e.Many
+          do! !!e.Element
+
+        | Renderer.OptionRenderer e ->
+          do! !e.Option
+          do! !!e.None
+          do! !!e.Some
+
         | Renderer.ListRenderer e ->
           do! !e.List
           do! !!e.Element
@@ -153,7 +239,9 @@ module Validator =
           do! !!s.Right
 
         | Renderer.StreamRenderer(_, e) -> return! !e
-        | Renderer.FormRenderer(f, e) ->
+        | Renderer.FormRenderer(f, e)
+        | Renderer.ManyFormRenderer(f, e, _, _)
+        | Renderer.TableFormRenderer(f, e, _) ->
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! s = state.GetState()
 
@@ -786,4 +874,5 @@ module Validator =
         for launcher in ctx.Launchers |> Map.values do
           do! FormLauncher.Validate ctx launcher
       }
+      |> state.WithErrorContext $"...when validating spec"
       |> state.WithErrorContext $"...when validating spec"

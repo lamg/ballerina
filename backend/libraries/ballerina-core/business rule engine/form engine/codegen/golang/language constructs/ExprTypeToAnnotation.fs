@@ -133,14 +133,14 @@ module TypeAnnotations =
           let! e = !e
 
           do!
-            config.Many.RequiredImport
+            config.Table.RequiredImport
             |> Option.toList
             |> Set.ofList
             |> Set.union
             |> GoCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          return $"{config.Many.GeneratedTypeName}[{e}]"
+          return $"{config.Table.GeneratedTypeName}[{e}]"
         | ExprType.MapType(k, v) ->
           let! k = !k
           let! v = !v
