@@ -396,7 +396,7 @@ module Renderers =
                   }
                   state.Throw(
                     Errors.Singleton
-                      $"Error: cannot resolve field renderer {s} in {(formsState.Forms |> Map.values |> Seq.map (fun v -> v.FormName) |> List.ofSeq).ToFSharpString}"
+                      $"Error: cannot resolve field renderer {s}."
                     |> Errors.WithPriority ErrorPriority.High
                   ) ]
               )

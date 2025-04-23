@@ -67,6 +67,8 @@
       ✅ inside a column renderer we validate with global, root, but neither row nor local
     ❌ codegen
       ❌ identical to entities and tables, but with an extra Id of type of the parent entity
+      ❌ add table methods (get, patch, add, delete, move) to both table and many
+        ❌ filter codegen adequately
       ❌ disambiguated by name of both `E` and `F`
       ❌ plus a `GetE:Id -> E` where `E` is the relevant entity
       ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`

@@ -126,6 +126,32 @@ func NewTuple8[a any, b any, c any, d any, e any, f any, g any, h any](item1 a, 
 	return p
 }
 
+type Tuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any] struct {
+	Item1 a
+	Item2 b
+	Item3 c
+	Item4 d
+	Item5 e
+	Item6 f
+	Item7 g
+	Item8 h
+	Item9 i
+}
+
+func NewTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any](item1 a, item2 b, item3 c, item4 d, item5 e, item6 f, item7 g, item8 h, item9 i) Tuple9[a, b, c, d, e, f, g, h, i] {
+	var p Tuple9[a, b, c, d, e, f, g, h, i]
+	p.Item1 = item1
+	p.Item2 = item2
+	p.Item3 = item3
+	p.Item4 = item4
+	p.Item5 = item5
+	p.Item6 = item6
+	p.Item7 = item7
+	p.Item8 = item8
+	p.Item9 = item9
+	return p
+}
+
 type DeltaTuple2EffectsEnum string
 
 const (
@@ -645,6 +671,7 @@ const (
 	Tuple8Item5   DeltaTuple8EffectsEnum = "Tuple8Item5"
 	Tuple8Item6   DeltaTuple8EffectsEnum = "Tuple8Item6"
 	Tuple8Item7   DeltaTuple8EffectsEnum = "Tuple8Item7"
+	Tuple8Item8   DeltaTuple8EffectsEnum = "Tuple8Item8"
 )
 
 var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Replace, Tuple8Item1, Tuple8Item2, Tuple8Item3, Tuple8Item4, Tuple8Item5, Tuple8Item6}
@@ -713,6 +740,12 @@ func NewDeltaTuple8Item7[a any, b any, c any, d any, e any, f any, g any, h any,
 		Item7:         delta,
 	}
 }
+func NewDeltaTuple8Item8[a any, b any, c any, d any, e any, f any, g any, h any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaH) DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
+	return DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
+		Discriminator: Tuple8Item8,
+		Item8:         delta,
+	}
+}
 func MatchDeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, Result any](
 	onReplace func(Tuple8[a, b, c, d, e, f, g, h]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
@@ -747,5 +780,135 @@ func MatchDeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, de
 			return onItem8(delta.Item8)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.Discriminator), "DeltaTuple8")
+	}
+}
+
+type DeltaTuple9EffectsEnum string
+
+const (
+	Tuple9Replace DeltaTuple9EffectsEnum = "Tuple9Replace"
+	Tuple9Item1   DeltaTuple9EffectsEnum = "Tuple9Item1"
+	Tuple9Item2   DeltaTuple9EffectsEnum = "Tuple9Item2"
+	Tuple9Item3   DeltaTuple9EffectsEnum = "Tuple9Item3"
+	Tuple9Item4   DeltaTuple9EffectsEnum = "Tuple9Item4"
+	Tuple9Item5   DeltaTuple9EffectsEnum = "Tuple9Item5"
+	Tuple9Item6   DeltaTuple9EffectsEnum = "Tuple9Item6"
+	Tuple9Item7   DeltaTuple9EffectsEnum = "Tuple9Item7"
+	Tuple9Item8   DeltaTuple9EffectsEnum = "Tuple9Item8"
+	Tuple9Item9   DeltaTuple9EffectsEnum = "Tuple9Item9"
+)
+
+var AllDeltaTuple9EffectsEnumCases = [...]DeltaTuple9EffectsEnum{Tuple9Replace, Tuple9Item1, Tuple9Item2, Tuple9Item3, Tuple9Item4, Tuple9Item5, Tuple9Item6}
+
+func DefaultDeltaTuple9EffectsEnum() DeltaTuple9EffectsEnum { return AllDeltaTuple9EffectsEnumCases[0] }
+
+type DeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any] struct {
+	DeltaBase
+	Discriminator DeltaTuple9EffectsEnum
+	Replace       Tuple9[a, b, c, d, e, f, g, h, i]
+	Item1         deltaA
+	Item2         deltaB
+	Item3         deltaC
+	Item4         deltaD
+	Item5         deltaE
+	Item6         deltaF
+	Item7         deltaG
+	Item8         deltaH
+}
+
+func NewDeltaTuple9Replace[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](value Tuple9[a, b, c, d, e, f, g, h, i]) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Replace,
+		Replace:       value,
+	}
+}
+func NewDeltaTuple9Item1[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaA) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item1,
+		Item1:         delta,
+	}
+}
+func NewDeltaTuple9Item2[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaB) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item2,
+		Item2:         delta,
+	}
+}
+func NewDeltaTuple9Item3[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaC) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item3,
+		Item3:         delta,
+	}
+}
+func NewDeltaTuple9Item4[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaD) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item4,
+		Item4:         delta,
+	}
+}
+func NewDeltaTuple9Item5[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaE) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item5,
+		Item5:         delta,
+	}
+}
+func NewDeltaTuple9Item6[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaF) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item6,
+		Item6:         delta,
+	}
+}
+func NewDeltaTuple9Item7[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaG) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item7,
+		Item7:         delta,
+	}
+}
+func NewDeltaTuple9Item8[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaH) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item8,
+		Item8:         delta,
+	}
+}
+func NewDeltaTuple9Item9[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaH) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
+	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
+		Discriminator: Tuple9Item9,
+		Item8:         delta,
+	}
+}
+func MatchDeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, Result any](
+	onReplace func(Tuple9[a, b, c, d, e, f, g, h, i]) (Result, error),
+	onItem1 func(deltaA) (Result, error),
+	onItem2 func(deltaB) (Result, error),
+	onItem3 func(deltaC) (Result, error),
+	onItem4 func(deltaD) (Result, error),
+	onItem5 func(deltaE) (Result, error),
+	onItem6 func(deltaF) (Result, error),
+	onItem7 func(deltaG) (Result, error),
+	onItem8 func(deltaH) (Result, error),
+) func(DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
+	return func(delta DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
+		var result Result
+		switch delta.Discriminator {
+		case "Tuple9Replace":
+			return onReplace(delta.Replace)
+		case "Tuple9Item1":
+			return onItem1(delta.Item1)
+		case "Tuple9Item2":
+			return onItem2(delta.Item2)
+		case "Tuple9Item3":
+			return onItem3(delta.Item3)
+		case "Tuple9Item4":
+			return onItem4(delta.Item4)
+		case "Tuple9Item5":
+			return onItem5(delta.Item5)
+		case "Tuple9Item6":
+			return onItem6(delta.Item6)
+		case "Tuple9Item7":
+			return onItem7(delta.Item7)
+		case "Tuple9Item8":
+			return onItem8(delta.Item8)
+		}
+		return result, NewInvalidDiscriminatorError(string(delta.Discriminator), "DeltaTuple9")
 	}
 }
