@@ -646,41 +646,48 @@ module Renderers =
     static member Parse (fields: (string * JsonValue)[]) (formTypeId: TypeId) =
       state.Either3
         (state {
-          let! formFields = FormFields.Parse fields
-          let! t = state.TryFindType formTypeId.TypeName
-
-          return
-            FormBody.Record
-              {| Fields = formFields
-                 RecordType = t.Type |}
-        })
-        (state {
           let! casesJson = fields |> state.TryFindField "cases"
 
           return!
             state {
               let! casesJson = casesJson |> JsonValue.AsRecord |> state.OfSum
               let! rendererJson = fields |> state.TryFindField "renderer"
-              let! renderer = Renderer.Parse fields rendererJson
-              let! t = state.TryFindType formTypeId.TypeName
+              let! renderer = JsonValue.AsString rendererJson |> state.OfSum
+              let! ctx = state.GetContext()
 
-              let! cases =
-                casesJson
-                |> Seq.map (fun (caseName, caseJson) ->
-                  state {
-                    // let! caseJson = caseJson |> JsonValue.AsRecord |> state.OfSum
-                    let! caseBody = Renderer.Parse [||] caseJson
-                    return caseName, caseBody
-                  }
-                  |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
-                |> state.All
-                |> state.Map(Map.ofSeq)
+              let! containerRendererJson =
+                fields
+                |> state.TryFindField "containerRenderer"
+                |> state.Catch
+                |> state.Map(Sum.toOption)
 
-              return
-                {| Cases = cases
-                   Renderer = renderer
-                   UnionType = t.Type |}
-                |> FormBody.Union
+              if ctx.Union.SupportedRenderers |> Set.contains renderer |> not then
+                return! state.Throw(Errors.Singleton $"Error: cannot find union renderer {renderer}")
+              else
+                let! t = state.TryFindType formTypeId.TypeName
+
+                let! cases =
+                  casesJson
+                  |> Seq.map (fun (caseName, caseJson) ->
+                    state {
+                      // let! caseJson = caseJson |> JsonValue.AsRecord |> state.OfSum
+                      let! caseBody = Renderer.Parse [||] caseJson
+                      return caseName, caseBody
+                    }
+                    |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
+                  |> state.All
+                  |> state.Map(Map.ofSeq)
+
+                return
+                  {| Cases = cases
+                     Renderer =
+                      PrimitiveRenderer
+                        { PrimitiveRendererName = renderer
+                          PrimitiveRendererId = Guid.CreateVersion7()
+                          Type = t.Type }
+
+                     UnionType = t.Type |}
+                  |> FormBody.Union
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         })
@@ -777,6 +784,15 @@ module Renderers =
                   |> FormBody.Table
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
+        })
+        (state {
+          let! formFields = FormFields.Parse fields
+          let! t = state.TryFindType formTypeId.TypeName
+
+          return
+            FormBody.Record
+              {| Fields = formFields
+                 RecordType = t.Type |}
         })
       |> state.MapError(Errors.HighestPriority)
 

@@ -52,12 +52,21 @@
         "Timestamp": "Date"
       }
     },
+    "Role": {
+      "fun":"Union",
+      "args":[
+        { "caseName":"SuperAdmin", "fields":{} },
+        { "caseName":"Admin", "fields":{} },
+        { "caseName":"Regular", "fields":{} }
+      ]
+    },
     "User": {
       "fields": {
         "Id": "guid",
         "Name": "string",
         "Surname": "string",
         "Email": "string",
+        "Role": "Role",
         "Job": {
           "fun": "Option",
           "args": [
@@ -233,6 +242,18 @@
             "label": "Surname",
             "disabled": true
           },
+          "Role": {
+            "renderer":{
+              "type": "Role",
+              "renderer": "union",
+              "cases": {
+                "SuperAdmin": "unit",
+                "Admin":"unit",
+                "Regular":"unit"
+              }
+            },
+            "label": "Role"
+          },
           "Job": {
             "renderer": "readonlyOption",
             "noneRenderer": {
@@ -347,6 +368,7 @@
                     "Name",
                     "Surname",
                     "Job",
+                    "Role",
                     "Team",
                     "UserGroups",
                     "Activities"
