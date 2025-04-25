@@ -69,6 +69,8 @@ module Unification =
         match t1, t2 with
         | ExprType.UnitType, ExprType.UnitType -> return UnificationConstraints.Zero()
         | ExprType.LookupType l1, ExprType.LookupType l2 when l1 = l2 -> return UnificationConstraints.Zero()
+        | ExprType.LookupType l1, ExprType.LookupType l2 when l1 <> l2 ->
+          return! sum.Throw(Errors.Singleton($"Error: types {t1} and {t2} cannot be unified under typedefs {typedefs}"))
         | ExprType.VarType v1, ExprType.VarType v2 ->
           match tvars |> Map.tryFind v1, tvars |> Map.tryFind v2 with
           | Some v1, Some v2 ->

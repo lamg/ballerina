@@ -3,6 +3,19 @@
     "GlobalConfiguration": {
       "fields": {}
     },
+    "CollectionReference": {
+      "extends": [],
+      "fields": {
+        "DisplayValue": "string",
+        "Id": "guid"
+      }
+    },
+    "CompanyRef": {
+      "extends": [
+        "CollectionReference"
+      ],
+      "fields": {}
+    },
     "UserGroup": {
       "fields": {
         "Id": "guid",
@@ -15,7 +28,13 @@
         "Id": "guid",
         "Name": "string",
         "Description": "string",
-        "Salary": "Float64"
+        "Salary": "Float64",
+        "Company": {
+          "fun": "SingleSelection",
+          "args": [
+            "CompanyRef"
+          ]
+        }
       }
     },
     "Team": {
@@ -88,6 +107,8 @@
     }
   },
   "apis": {
+    "searchableStreams": {
+    },
     "tables": {
       "ActiveUsersApi": {
         "type": "User"
@@ -98,6 +119,9 @@
     },
     "lookups": {
       "User": {
+        "streams": {
+          "UserCompaniesApi": "CompanyRef"
+        },
         "one": {
           "UserTeamApi": {
             "type": "Team",
@@ -126,38 +150,6 @@
     }
   },
   "forms": {
-    "job": {
-      "type": "Job",
-      "fields": {
-        "Name": {
-          "renderer": "string",
-          "label": "Name"
-        },
-        "Description": {
-          "renderer": "string",
-          "label": "Description"
-        },
-        "Salary": {
-          "renderer": "float64",
-          "label": "Salary"
-        }
-      },
-      "tabs": {
-        "main": {
-          "columns": {
-            "main": {
-              "groups": {
-                "main": [
-                  "Name",
-                  "Description",
-                  "Salary"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
     "team": {
       "type": "Team",
       "containerRenderer": "grayBackground",
@@ -185,26 +177,6 @@
           }
         }
       }
-    },
-    "userGroups": {
-      "type": "UserGroup",
-      "renderer": "table",
-      "columns": {
-        "Name": {
-          "renderer": "string",
-          "label": "Name"
-        },
-        "Description": {
-          "renderer": "string",
-          "label": "Description",
-          "isFilterable":false,
-          "isSortable":false
-        }
-      },
-      "visibleColumns": [
-        "Name",
-        "Description"
-      ]
     },
     "activities": {
       "type": "Activity",
@@ -240,26 +212,26 @@
     "activeUsers": {
       "type": "User",
       "renderer": "table",
-      "containerRenderer":"highlighted",
+      "containerRenderer": "highlighted",
       "columns": {
         "Email": {
           "renderer": "string",
           "label": "Email",
-          "disabled":true
+          "disabled": true
         }
       },
       "details": {
-        "containerRenderer":"highlighted",
+        "containerRenderer": "highlighted",
         "fields": {
           "Name": {
             "renderer": "string",
             "label": "Name",
-            "disabled":true
+            "disabled": true
           },
           "Surname": {
             "renderer": "string",
             "label": "Surname",
-            "disabled":true
+            "disabled": true
           },
           "Job": {
             "renderer": "readonlyOption",
@@ -270,7 +242,47 @@
             "someRenderer": {
               "renderer": "one",
               "valueRenderer": {
-                "renderer": "job"
+                "renderer": {
+                  "type": "Job",
+                  "fields": {
+                    "Name": {
+                      "renderer": "string",
+                      "label": "Name"
+                    },
+                    "Description": {
+                      "renderer": "string",
+                      "label": "Description"
+                    },
+                    "Salary": {
+                      "renderer": "float64",
+                      "label": "Salary"
+                    },
+                    "Company": {
+                      "renderer": "streamSingleselection",
+                      "stream": [
+                        "User",
+                        "UserCompaniesApi"
+                      ],
+                      "label": "Company"
+                    }
+                  },
+                  "tabs": {
+                    "main": {
+                      "columns": {
+                        "main": {
+                          "groups": {
+                            "main": [
+                              "Name",
+                              "Description",
+                              "Salary",
+                              "Company"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               },
               "api": [
                 "User",
@@ -291,7 +303,26 @@
             "label": "Team"
           },
           "UserGroups": {
-            "renderer": "userGroups",
+            "renderer": {
+              "type": "UserGroup",
+              "renderer": "table",
+              "columns": {
+                "Name": {
+                  "renderer": "string",
+                  "label": "Name"
+                },
+                "Description": {
+                  "renderer": "string",
+                  "label": "Description",
+                  "isFilterable": false,
+                  "isSortable": false
+                }
+              },
+              "visibleColumns": [
+                "Name",
+                "Description"
+              ]              
+            },
             "api": [
               "User",
               "UserGroupsApi"

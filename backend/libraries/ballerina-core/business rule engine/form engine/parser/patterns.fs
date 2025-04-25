@@ -35,14 +35,20 @@ module Patterns =
 
     member ctx.TryFindOne typeName name =
       sum {
-        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "one" typeName
+        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "lookup (for one)" typeName
         return! lookup.Ones |> Map.tryFindWithError name "one" name
       }
 
     member ctx.TryFindMany typeName name =
       sum {
-        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "many" typeName
+        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "lookup (for many)" typeName
         return! lookup.Manys |> Map.tryFindWithError name "many" name
+      }
+
+    member ctx.TryFindLookupStream typeName name =
+      sum {
+        let! lookup = ctx.Apis.Lookups |> Map.tryFindWithError typeName "lookup (for stream)" typeName
+        return! lookup.Streams |> Map.tryFindWithError name "stream" name
       }
 
     member ctx.TryFindStream name =
@@ -117,10 +123,18 @@ module Patterns =
       | FormRenderer(f, t)
       | TableFormRenderer(f, t, _)
       | ManyFormRenderer(f, t, _, _) -> t
-      | UnionRenderer r ->
-        ExprType.UnionType(
-          r.Cases
-          |> Map.map (fun cn c ->
-            { CaseName = cn.CaseName
-              Fields = c.Type })
-        )
+      | InlineFormRenderer i -> i.Body.Type
+  // | UnionRenderer r ->
+  //   ExprType.UnionType(
+  //     r.Cases
+  //     |> Map.map (fun cn c ->
+  //       { CaseName = cn.CaseName
+  //         Fields = c.Type })
+  //   )
+
+  and FormBody with
+    member self.Type =
+      match self with
+      | FormBody.Record f -> f.RecordType
+      | FormBody.Union f -> f.UnionType
+      | FormBody.Table f -> f.RowType |> ExprType.TableType

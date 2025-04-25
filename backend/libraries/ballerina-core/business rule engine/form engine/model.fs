@@ -301,7 +301,11 @@ module Model =
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
-         Details: Option<{| FormFields: FormFields; ContainerRenderer:Option<string> |}>
+         Details:
+           Option<
+             {| FormFields: FormFields
+                ContainerRenderer: Option<string> |}
+            >
          Columns: Map<string, Column>
          VisibleColumns: FormGroup
          RowType: ExprType |}
@@ -403,15 +407,22 @@ module Model =
       //Children: RendererChildren
       |}
     | EnumRenderer of EnumApiId * Renderer
-    | StreamRenderer of StreamApiId * Renderer
+    | StreamRenderer of StreamRendererApi * Renderer
     | FormRenderer of FormConfigId * ExprType //* RendererChildren
     | TableFormRenderer of FormConfigId * ExprType * TableApiId //* RendererChildren
     | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
-    | UnionRenderer of
-      {| Union: Renderer
-         Cases: Map<CaseName, Renderer>
-      //Children: RendererChildren
-      |}
+    | InlineFormRenderer of
+      {| Body: FormBody
+         ContainerRenderer: Option<string> |}
+  // | UnionRenderer of
+  //   {| Union: Renderer
+  //      Cases: Map<CaseName, Renderer>
+  //   //Children: RendererChildren
+  //   |}
+
+  and StreamRendererApi =
+    | Stream of StreamApiId
+    | LookupStream of {| Type: TypeId; Stream: StreamApiId |}
 
   and NestedRenderer =
     { Label: Option<string>

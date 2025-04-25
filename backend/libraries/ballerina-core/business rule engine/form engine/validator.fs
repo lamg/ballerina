@@ -22,18 +22,37 @@ module Validator =
   open Ballerina.Fun
 
   type NestedRenderer with
-    static member Validate (ctx: ParsedFormsContext) (formType: ExprType) (fr: NestedRenderer) : Sum<ExprType, Errors> =
-      Renderer.Validate ctx formType fr.Renderer
+    static member Validate
+      (codegen: CodeGenConfig)
+      (ctx: ParsedFormsContext)
+      (formType: ExprType)
+      (fr: NestedRenderer)
+      : Sum<ExprType, Errors> =
+      Renderer.Validate codegen ctx formType fr.Renderer
 
   and Renderer with
-    static member Validate (ctx: ParsedFormsContext) (formType: ExprType) (fr: Renderer) : Sum<ExprType, Errors> =
-      let (!) = Renderer.Validate ctx formType
+    static member Validate
+      (codegen: CodeGenConfig)
+      (ctx: ParsedFormsContext)
+      (formType: ExprType)
+      (fr: Renderer)
+      : Sum<ExprType, Errors> =
+      let (!) = Renderer.Validate codegen ctx formType
 
       sum {
         match fr with
-        | Renderer.EnumRenderer(enum, enumRenderer) ->
-          do! !enumRenderer |> Sum.map ignore
-          return fr.Type
+        | Renderer.InlineFormRenderer i ->
+          let formType = i.Body.Type
+
+          let formType =
+            if i.Body.IsTable |> not then
+              formType
+            else
+              match formType with
+              | ExprType.TableType row -> row
+              | _ -> formType
+
+          return! FormBody.Validate codegen ctx formType i.Body
         | Renderer.FormRenderer(f, body) -> return fr.Type
         | Renderer.TableFormRenderer(f, body, tableApiId) ->
           let! f = ctx.TryFindForm f.FormName
@@ -55,7 +74,7 @@ module Validator =
               do!
                 detailsForm.FormFields.Fields
                 |> Map.values
-                |> Seq.map (FieldConfig.Validate ctx apiRowType.Type)
+                |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
                 |> sum.All
                 |> Sum.map ignore
             | _ -> return ()
@@ -91,7 +110,7 @@ module Validator =
               do!
                 detailsForm.FormFields.Fields
                 |> Map.values
-                |> Seq.map (FieldConfig.Validate ctx apiRowType.Type)
+                |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
                 |> sum.All
                 |> Sum.map ignore
             | _ -> return ()
@@ -141,22 +160,26 @@ module Validator =
         | Renderer.PrimitiveRenderer p ->
 
           return fr.Type
+        | Renderer.EnumRenderer(enum, enumRenderer) ->
+          do! !enumRenderer |> Sum.map ignore
+          return fr.Type
         | Renderer.StreamRenderer(stream, streamRenderer) ->
 
           do! !streamRenderer |> Sum.map ignore
+
           return fr.Type
         | Renderer.TupleRenderer t ->
           do! t.Elements |> Seq.map (fun e -> !e.Renderer) |> sum.All |> Sum.map ignore
           return fr.Type
-        | Renderer.UnionRenderer r ->
+      // | Renderer.UnionRenderer r ->
 
-          do!
-            r.Cases
-            |> Seq.map (fun c -> !c.Value |> Sum.map ignore)
-            |> sum.All
-            |> Sum.map ignore
+      //   do!
+      //     r.Cases
+      //     |> Seq.map (fun c -> !c.Value |> Sum.map ignore)
+      //     |> sum.All
+      //     |> Sum.map ignore
 
-          return fr.Type
+      //   return fr.Type
       }
 
   and NestedRenderer with
@@ -198,6 +221,18 @@ module Validator =
 
       state {
         match r with
+        | Renderer.InlineFormRenderer i ->
+          let formType = i.Body.Type
+
+          let formType =
+            if i.Body.IsTable |> not then
+              formType
+            else
+              match formType with
+              | ExprType.TableType row -> row
+              | _ -> formType
+
+          do! FormBody.ValidatePredicates ctx globalType rootType formType i.Body
         | Renderer.PrimitiveRenderer p -> return ()
         | Renderer.EnumRenderer(_, e) -> return! !e
         | Renderer.TupleRenderer e ->
@@ -246,24 +281,29 @@ module Validator =
           let! s = state.GetState()
 
           do! validateFormConfigPredicates ctx globalType rootType f
-        | Renderer.UnionRenderer cs ->
-          do! !cs.Union
+      // | Renderer.UnionRenderer cs ->
+      //   do! !cs.Union
 
-          do!
-            cs.Cases
-            |> Seq.map (fun e -> e.Value)
-            |> Seq.map (fun c ->
-              Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType c.Type c)
-            |> state.All
-            |> state.Map ignore
+      //   do!
+      //     cs.Cases
+      //     |> Seq.map (fun e -> e.Value)
+      //     |> Seq.map (fun c ->
+      //       Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType c.Type c)
+      //     |> state.All
+      //     |> state.Map ignore
       }
 
   and FieldConfig with
-    static member Validate (ctx: ParsedFormsContext) (formType: ExprType) (fc: FieldConfig) : Sum<Unit, Errors> =
+    static member Validate
+      (codegen: CodeGenConfig)
+      (ctx: ParsedFormsContext)
+      (formType: ExprType)
+      (fc: FieldConfig)
+      : Sum<Unit, Errors> =
       sum {
         let! rendererType =
-          Renderer.Validate ctx formType fc.Renderer
-          |> sum.WithErrorContext $"...when validating renderer"
+          Renderer.Validate codegen ctx formType fc.Renderer
+          |> sum.WithErrorContext $"...when validating field config renderer for {fc.FieldName}"
 
         match formType with
         | RecordType fields ->
@@ -432,11 +472,16 @@ module Validator =
               | _ -> return ()
       }
 
-    static member Validate (ctx: ParsedFormsContext) (rootType: ExprType) (body: FormFields) : Sum<Unit, Errors> =
+    static member Validate
+      (codegen: CodeGenConfig)
+      (ctx: ParsedFormsContext)
+      (rootType: ExprType)
+      (body: FormFields)
+      : Sum<Unit, Errors> =
       sum.All(
         body.Fields
         |> Map.values
-        |> Seq.map (FieldConfig.Validate ctx rootType)
+        |> Seq.map (FieldConfig.Validate codegen ctx rootType)
         |> Seq.toList
       )
       |> Sum.map ignore
@@ -447,7 +492,7 @@ module Validator =
       (ctx: ParsedFormsContext)
       (localType: ExprType)
       (body: FormBody)
-      : Sum<Unit, Errors> =
+      : Sum<ExprType, Errors> =
       sum {
         match localType, body with
         | ExprType.UnionType typeCases, FormBody.Union formCases ->
@@ -470,15 +515,19 @@ module Validator =
                 match formCases.Cases |> Map.tryFind typeCase.Key.CaseName with
                 | None ->
                   sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
-                | Some formCase -> Renderer.Validate ctx typeCase.Value.Fields formCase)
+                | Some formCase -> Renderer.Validate codegen ctx typeCase.Value.Fields formCase)
               |> sum.All
               |> Sum.map ignore
+
+            return localType
         | ExprType.UnionType typeCases, _ ->
           return!
             sum.Throw(
               Errors.Singleton $"Error: the form type is a union, expected cases in the body but found fields instead."
             )
-        | _, FormBody.Record fields -> do! FormFields.Validate ctx localType fields.Fields
+        | _, FormBody.Record fields ->
+          do! FormFields.Validate codegen ctx localType fields.Fields
+          return localType
         | _, FormBody.Table table ->
           match table.Details with
           | Some(details) ->
@@ -494,14 +543,16 @@ module Validator =
             | None -> return ()
           | None -> return ()
 
-          return!
+          do!
             sum.All(
               table.Columns
               |> Map.values
-              |> Seq.map (fun c -> FieldConfig.Validate ctx localType c.FieldConfig)
+              |> Seq.map (fun c -> FieldConfig.Validate codegen ctx localType c.FieldConfig)
               |> Seq.toList
             )
             |> Sum.map ignore
+
+          return ExprType.TableType localType
 
         | _ -> return! sum.Throw(Errors.Singleton $"Error: mismatched form type and form body")
       }
@@ -630,7 +681,7 @@ module Validator =
       sum {
         let formType = formConfig.Body |> FormBody.FormDeclarationType
 
-        do! FormBody.Validate config ctx formType formConfig.Body
+        do! FormBody.Validate config ctx formType formConfig.Body |> Sum.map ignore
 
         match formConfig.ContainerRenderer with
         | Some containerName ->
@@ -642,7 +693,6 @@ module Validator =
           else
             return ()
         | None -> return ()
-
       }
       |> sum.WithErrorContext $"...when validating form config {formConfig.FormName}"
 
@@ -935,5 +985,6 @@ module Validator =
         for launcher in ctx.Launchers |> Map.values do
           do! FormLauncher.Validate ctx launcher
       }
+      |> state.WithErrorContext $"...when validating spec"
       |> state.WithErrorContext $"...when validating spec"
       |> state.WithErrorContext $"...when validating spec"

@@ -73,7 +73,19 @@
       ❌ plus a `GetE:Id -> E` where `E` is the relevant entity
       ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`
       ❌ if the parent entity has no Id:string|guid, give an error
+    ❌ parse nested forms at the renderer level
+      ✅ parse lookup APIs in streams
+      ✅ remove the inline union renderer parser
+      ✅ validate does not check that the type of the stream is equal to the type of the renderer and is equal to the type of the field
+        ✅ straightforward streams
+        ✅ lookup streams
+      ❌ does validation catch the wrong field renderer type?
+      ✅ test that tables parse as inline forms correctly
+      ❌ test that unions parse as inline forms correctly
+      ❌ test that the inline union form renderer is one of the `Union` `SupportedRenderer`s from the goconfig
     ❌ one/many should also support adding existing items (from a stream or a table)
+    ✅ add streams to Lookup Apis
+    ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
     ❌ BE `noop`s should be eliminated—anything with a const should be made into a delta unit/delta never
     ❌ form parser file is too long
       ✅ renderer.type should be in patterns, not runner
@@ -85,6 +97,8 @@
       ✅ split off the ExprType decomposition patterns
     ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
     ❌ cleanup
+      ❌ recursive type definitions in the writers do not work, but the recursion actually just needs the delta type of the nested writer (which might also loop?)
+      ❌ FormRenderer, TableFormRenderer, ManyFormRenderer should not lug around an ExprType, it is probably just cached
       ❌ add monadic operator (>>)
       ❌ are we checking that the stream and enum apis match the type of the field?
       ❌ use `OneApiId`, `ManyApiId`, etc. as type-safe keys in `OneRenderer` and `ManyRenderer`
