@@ -121,8 +121,7 @@ module Patterns =
       | StreamRenderer(_, r) -> r.Type
       | TupleRenderer i -> ExprType.TupleType(i.Elements |> Seq.map (fun e -> e.Type) |> List.ofSeq)
       | FormRenderer(f, t)
-      | TableFormRenderer(f, t, _)
-      | ManyFormRenderer(f, t, _, _) -> t
+      | TableFormRenderer(f, t, _) -> t
       | InlineFormRenderer i -> i.Body.Type
   // | UnionRenderer r ->
   //   ExprType.UnionType(

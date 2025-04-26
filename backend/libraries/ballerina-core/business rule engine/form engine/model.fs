@@ -412,7 +412,7 @@ module Model =
     | StreamRenderer of StreamRendererApi * Renderer
     | FormRenderer of FormConfigId * ExprType //* RendererChildren
     | TableFormRenderer of FormConfigId * ExprType * TableApiId //* RendererChildren
-    | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
+    // | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
     | InlineFormRenderer of
       {| Body: FormBody
          ContainerRenderer: Option<string> |}

@@ -81,42 +81,6 @@ module Validator =
           // | _ -> return ()
 
           return fr.Type
-        | Renderer.ManyFormRenderer(f, body, lookupTypeId, manyApiId) ->
-          let! f = ctx.TryFindForm f.FormName
-          let! (api, _) = ctx.TryFindMany lookupTypeId.TypeName manyApiId
-          let! apiRowType = ctx.TryFindType api.TypeId.TypeName
-          let! lookupType = ctx.TryFindType lookupTypeId.TypeName
-
-          do!
-            ExprType.Unify
-              Map.empty
-              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-              formType
-              lookupType.Type
-            |> Sum.map ignore
-
-          do!
-            ExprType.Unify
-              Map.empty
-              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-              fr.Type
-              (apiRowType.Type |> ExprType.TableType)
-            |> Sum.map ignore
-
-          // match f.Body with
-          // | FormBody.Table t ->
-          //   match t.Details with
-          //   | Some detailsForm ->
-          //     do!
-          //       detailsForm.FormFields.Fields
-          //       |> Map.values
-          //       |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
-          //       |> sum.All
-          //       |> Sum.map ignore
-          //   | _ -> return ()
-          // | _ -> return ()
-
-          return fr.Type
         | Renderer.OneRenderer(l) ->
           do! !l.One |> Sum.map ignore
           do! !l.Details.Renderer |> Sum.map ignore
@@ -291,7 +255,6 @@ module Validator =
 
         | Renderer.StreamRenderer(_, e) -> return! !e
         | Renderer.FormRenderer(f, e)
-        | Renderer.ManyFormRenderer(f, e, _, _)
         | Renderer.TableFormRenderer(f, e, _) ->
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! s = state.GetState()

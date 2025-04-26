@@ -74,28 +74,30 @@
       ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`
       ❌ if the parent entity has no Id:string|guid, give an error
     ❌ remove unnecessary parser of details renderer, just use inline with or without lookup
-    ❌ one
-      ❌ api
+    ✅ one
+      ✅ api
         ❌ methods:[getMany, update, create, delete]
           ❌ always generate GET:Id -> E x F
           ❌ if there is getMany, generate GETMany:Id -> E x Table[F]
           ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
-      ❌ renderer
-        ❌ `preview`
+      ✅ renderer
+        ✅ `preview`
           ❌ required if and only if API has `getMany`
           ❌ validate exactly like `details`
+      ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ❌ validation
         ❌ require `Id` if there is any method: getMany and patch both need an `Id`
     ❌ many
-      ❌ ManyRenderer is just not instantiated or parsed at all apparently
+      ✅ ManyRenderer is just not instantiated or parsed at all apparently
       ❌ api
         ❌ methods:[update, create, delete, getManyUnlinked]
           ❌ always generate GETMany:Id -> E x Table[F]
           ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
-      ❌ renderer
-        ❌ `preview`
+      ✅ renderer
+        ✅ `preview`
           ❌ required if and only if API has `getManyUnlinked`
           ❌ validate exactly like `details`
+      ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ❌ validation
         ❌ always require `Id`
     ❌ table
@@ -118,6 +120,7 @@
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
     ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
     ❌ cleanup
+      ❌ many renderer should be harmonized to table renderer - with `columns` and `visibleColumns`, the tabs structure does not make a lot of sense and this will prevent proper filtering and sorting of `Many`
       ❌ form parser file is too long
         ✅ renderer.type should be in patterns, not runner
         ✅ split off the renderers parsers

@@ -675,50 +675,17 @@ module Renderers =
                                     return FormRenderer(form |> FormConfig.Id, fields.RecordType)
                                   | FormBody.Table table ->
                                     let! tableApiNameJson = parentJsonFields |> sum.TryFindField "api" |> state.OfSum
+                                    let! tableApiName = tableApiNameJson |> JsonValue.AsString |> state.OfSum
+                                    let! tableApi = formsState.TryFindTableApi tableApiName |> state.OfSum
 
-                                    return!
-                                      state.Either
-                                        (state {
-                                          let! tableApiName = tableApiNameJson |> JsonValue.AsString |> state.OfSum
-                                          let! tableApi = formsState.TryFindTableApi tableApiName |> state.OfSum
+                                    let! tableType = formsState.TryFindType tableApi.TypeId.TypeName |> state.OfSum
 
-                                          let! tableType =
-                                            formsState.TryFindType tableApi.TypeId.TypeName |> state.OfSum
-
-                                          return
-                                            TableFormRenderer(
-                                              form |> FormConfig.Id,
-                                              tableType.Type |> ExprType.TableType,
-                                              tableApi |> TableApi.Id
-                                            )
-                                        })
-                                        (state {
-                                          let! tableApiLookupTypeNameJson, tableApiNameJson =
-                                            tableApiNameJson |> JsonValue.AsPair |> state.OfSum
-
-                                          let! tableApiLookupTypeName, tableApiName =
-                                            state.All2
-                                              (tableApiLookupTypeNameJson |> JsonValue.AsString |> state.OfSum)
-                                              (tableApiNameJson |> JsonValue.AsString |> state.OfSum)
-
-                                          let! tableApiLookupType =
-                                            formsState.TryFindType tableApiLookupTypeName |> state.OfSum
-
-                                          let! (tableApi,_) =
-                                            formsState.TryFindMany tableApiLookupType.TypeId.TypeName tableApiName
-                                            |> state.OfSum
-
-                                          let! tableType =
-                                            formsState.TryFindType tableApi.TypeId.TypeName |> state.OfSum
-
-                                          return
-                                            ManyFormRenderer(
-                                              form |> FormConfig.Id,
-                                              tableType.Type |> ExprType.TableType,
-                                              tableApiLookupType.TypeId,
-                                              (tableApi |> TableApi.Id).TableName
-                                            )
-                                        })
+                                    return
+                                      TableFormRenderer(
+                                        form |> FormConfig.Id,
+                                        tableType.Type |> ExprType.TableType,
+                                        tableApi |> TableApi.Id
+                                      )
                                 }
                                 |> state.MapError(Errors.WithPriority ErrorPriority.High)
 
