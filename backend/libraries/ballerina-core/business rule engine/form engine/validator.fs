@@ -67,23 +67,23 @@ module Validator =
               (apiRowType.Type |> ExprType.TableType)
             |> Sum.map ignore
 
-          match f.Body with
-          | FormBody.Table t ->
-            match t.Details with
-            | Some detailsForm ->
-              do!
-                detailsForm.FormFields.Fields
-                |> Map.values
-                |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
-                |> sum.All
-                |> Sum.map ignore
-            | _ -> return ()
-          | _ -> return ()
+          // match f.Body with
+          // | FormBody.Table t ->
+          //   match t.Details with
+          //   | Some detailsForm ->
+          //     do!
+          //       detailsForm.FormFields.Fields
+          //       |> Map.values
+          //       |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
+          //       |> sum.All
+          //       |> Sum.map ignore
+          //   | _ -> return ()
+          // | _ -> return ()
 
           return fr.Type
         | Renderer.ManyFormRenderer(f, body, lookupTypeId, manyApiId) ->
           let! f = ctx.TryFindForm f.FormName
-          let! api = ctx.TryFindMany lookupTypeId.TypeName manyApiId
+          let! (api, _) = ctx.TryFindMany lookupTypeId.TypeName manyApiId
           let! apiRowType = ctx.TryFindType api.TypeId.TypeName
           let! lookupType = ctx.TryFindType lookupTypeId.TypeName
 
@@ -103,28 +103,36 @@ module Validator =
               (apiRowType.Type |> ExprType.TableType)
             |> Sum.map ignore
 
-          match f.Body with
-          | FormBody.Table t ->
-            match t.Details with
-            | Some detailsForm ->
-              do!
-                detailsForm.FormFields.Fields
-                |> Map.values
-                |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
-                |> sum.All
-                |> Sum.map ignore
-            | _ -> return ()
-          | _ -> return ()
+          // match f.Body with
+          // | FormBody.Table t ->
+          //   match t.Details with
+          //   | Some detailsForm ->
+          //     do!
+          //       detailsForm.FormFields.Fields
+          //       |> Map.values
+          //       |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
+          //       |> sum.All
+          //       |> Sum.map ignore
+          //   | _ -> return ()
+          // | _ -> return ()
 
           return fr.Type
         | Renderer.OneRenderer(l) ->
           do! !l.One |> Sum.map ignore
-          do! !l.Value.Renderer |> Sum.map ignore
+          do! !l.Details.Renderer |> Sum.map ignore
+
+          match l.Preview with
+          | Some preview -> do! !preview.Renderer |> Sum.map ignore
+          | _ -> return ()
 
           return fr.Type
         | Renderer.ManyRenderer(l) ->
           do! !l.Many |> Sum.map ignore
-          do! !l.Element.Renderer |> Sum.map ignore
+          do! !l.Details.Renderer |> Sum.map ignore
+
+          match l.Preview with
+          | Some preview -> do! !preview.Renderer |> Sum.map ignore
+          | _ -> return ()
 
           return fr.Type
         | Renderer.OptionRenderer(l) ->
@@ -243,11 +251,19 @@ module Validator =
 
         | Renderer.OneRenderer e ->
           do! !e.One
-          do! !!e.Value
+          do! !!e.Details
+
+          match e.Preview with
+          | Some preview -> do! !!preview
+          | _ -> return ()
 
         | Renderer.ManyRenderer e ->
           do! !e.Many
-          do! !!e.Element
+          do! !!e.Details
+
+          match e.Preview with
+          | Some preview -> do! !!preview
+          | _ -> return ()
 
         | Renderer.OptionRenderer e ->
           do! !e.Option
@@ -531,16 +547,17 @@ module Validator =
         | _, FormBody.Table table ->
           match table.Details with
           | Some(details) ->
-            match details.ContainerRenderer with
-            | Some containerName ->
-              if codegen.ContainerRenderers |> Set.contains containerName |> not then
-                return!
-                  sum.Throw(
-                    Errors.Singleton $"Error: details form uses non-existing container renderer {containerName}"
-                  )
-              else
-                return ()
-            | None -> return ()
+            // match details.ContainerRenderer with
+            // | Some containerName ->
+            //   if codegen.ContainerRenderers |> Set.contains containerName |> not then
+            //     return!
+            //       sum.Throw(
+            //         Errors.Singleton $"Error: details form uses non-existing container renderer {containerName}"
+            //       )
+            //   else
+            //     return ()
+            // | None -> return ()
+            return ()
           | None -> return ()
 
           do!
@@ -597,17 +614,17 @@ module Validator =
 
             do! FieldConfig.ValidatePredicates ctx globalType rootType columnType false column.Value.FieldConfig
 
-          match table.Details with
-          | Some details ->
-            for fieldConfig in details.FormFields.Fields |> Map.values do
-              let! fieldType =
-                rowTypeFields
-                |> Map.tryFindWithError fieldConfig.FieldName "fields" "fields"
-                |> state.OfSum
+          // match table.Details with
+          // | Some details ->
+          //   for fieldConfig in details.FormFields.Fields |> Map.values do
+          //     let! fieldType =
+          //       rowTypeFields
+          //       |> Map.tryFindWithError fieldConfig.FieldName "fields" "fields"
+          //       |> state.OfSum
 
-              do! FieldConfig.ValidatePredicates ctx globalType rootType fieldType true fieldConfig
+          //     do! FieldConfig.ValidatePredicates ctx globalType rootType fieldType true fieldConfig
 
-          | None -> return ()
+          // | None -> return ()
 
           match table.VisibleColumns with
           | Inlined _ -> return ()

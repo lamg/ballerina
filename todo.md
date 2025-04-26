@@ -73,6 +73,37 @@
       ❌ plus a `GetE:Id -> E` where `E` is the relevant entity
       ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`
       ❌ if the parent entity has no Id:string|guid, give an error
+    ❌ remove unnecessary parser of details renderer, just use inline with or without lookup
+    ❌ one
+      ❌ api
+        ❌ methods:[getMany, update, create, delete]
+          ❌ always generate GET:Id -> E x F
+          ❌ if there is getMany, generate GETMany:Id -> E x Table[F]
+          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
+      ❌ renderer
+        ❌ `preview`
+          ❌ required if and only if API has `getMany`
+          ❌ validate exactly like `details`
+      ❌ validation
+        ❌ require `Id` if there is any method: getMany and patch both need an `Id`
+    ❌ many
+      ❌ ManyRenderer is just not instantiated or parsed at all apparently
+      ❌ api
+        ❌ methods:[update, create, delete, getManyUnlinked]
+          ❌ always generate GETMany:Id -> E x Table[F]
+          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
+      ❌ renderer
+        ❌ `preview`
+          ❌ required if and only if API has `getManyUnlinked`
+          ❌ validate exactly like `details`
+      ❌ validation
+        ❌ always require `Id`
+    ❌ table
+      ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
+      ❌ api
+        ❌ methods:[update, create, delete]
+          ❌ always generate GETMany:Id -> Table[E]
+          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaE
     ✅ parse nested forms at the renderer level
       ✅ parse lookup APIs in streams
       ✅ remove the inline union renderer parser

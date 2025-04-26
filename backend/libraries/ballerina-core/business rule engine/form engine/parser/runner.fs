@@ -189,7 +189,10 @@ module Runner =
       state.Any(
         NonEmptyList.OfList(
           crudCase "create" CrudMethod.Create,
-          [ crudCase "get" CrudMethod.Get
+          [ crudCase "delete" CrudMethod.Delete
+            crudCase "get" CrudMethod.Get
+            crudCase "getMany" CrudMethod.GetMany
+            crudCase "getManyUnlinked" CrudMethod.GetManyUnlinked
             crudCase "update" CrudMethod.Update
             crudCase "default" CrudMethod.Default ]
         )
@@ -215,6 +218,32 @@ module Runner =
         return tableApi
       }
       |> state.WithErrorContext $"...when parsing table api {tableName}"
+
+    static member ParseAsMany
+      (tableName: string)
+      (tableTypeJson: JsonValue)
+      : State<TableApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext, Errors> =
+      state {
+        let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
+
+        let! typeJson, methodsJson =
+          state.All2
+            (tableTypeFieldJsons |> state.TryFindField "type")
+            (tableTypeFieldJsons |> state.TryFindField "methods")
+
+        let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
+        let! tableType = ExprType.Parse typeJson
+        let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
+        let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
+
+        let tableApi =
+          { TableApi.TypeId = tableTypeId
+            TableName = tableName },
+          methods
+
+        return tableApi
+      }
+      |> state.WithErrorContext $"...when parsing table/many api {tableName}"
 
   type EntityApi with
     static member Parse
@@ -290,7 +319,7 @@ module Runner =
             manysFields
             |> Seq.map (fun (tableName, tableJson) ->
               state {
-                let! tableApi = TableApi.Parse tableName tableJson
+                let! tableApi = TableApi.ParseAsMany tableName tableJson
                 return tableName, tableApi
               })
           )

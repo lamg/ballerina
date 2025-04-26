@@ -53,11 +53,20 @@
       }
     },
     "Role": {
-      "fun":"Union",
-      "args":[
-        { "caseName":"SuperAdmin", "fields":{} },
-        { "caseName":"Admin", "fields":{} },
-        { "caseName":"Regular", "fields":{} }
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "SuperAdmin",
+          "fields": {}
+        },
+        {
+          "caseName": "Admin",
+          "fields": {}
+        },
+        {
+          "caseName": "Regular",
+          "fields": {}
+        }
       ]
     },
     "User": {
@@ -116,8 +125,7 @@
     }
   },
   "apis": {
-    "searchableStreams": {
-    },
+    "searchableStreams": {},
     "tables": {
       "ActiveUsersApi": {
         "type": "User"
@@ -143,16 +151,31 @@
             "type": "Job",
             "methods": [
               "get",
-              "update"
+              "update",
+              "getMany",
+              "create",
+              "delete"
             ]
           }
         },
         "many": {
           "UserGroupsApi": {
-            "type": "UserGroup"
+            "type": "UserGroup",
+            "methods": [
+              "update",
+              "getManyUnlinked",
+              "create",
+              "delete"
+            ]
           },
           "UserActivitiesApi": {
-            "type": "Activity"
+            "type": "Activity",
+            "methods": [
+              "update",
+              "getManyUnlinked",
+              "create",
+              "delete"
+            ]
           }
         }
       }
@@ -187,24 +210,6 @@
         }
       }
     },
-    "activities": {
-      "type": "Activity",
-      "renderer": "table",
-      "columns": {
-        "Log": {
-          "renderer": "string",
-          "label": "Name"
-        },
-        "Timestamp": {
-          "renderer": "date",
-          "label": "Timestamp"
-        }
-      },
-      "visibleColumns": [
-        "Log",
-        "Timestamp"
-      ]
-    },
     "inactiveUsers": {
       "type": "User",
       "renderer": "table",
@@ -229,7 +234,7 @@
           "disabled": true
         }
       },
-      "details": {
+      "detailsRenderer": {
         "containerRenderer": "highlighted",
         "fields": {
           "Name": {
@@ -243,13 +248,13 @@
             "disabled": true
           },
           "Role": {
-            "renderer":{
+            "renderer": {
               "type": "Role",
               "renderer": "union",
               "cases": {
                 "SuperAdmin": "unit",
-                "Admin":"unit",
-                "Regular":"unit"
+                "Admin": "unit",
+                "Regular": "unit"
               }
             },
             "label": "Role"
@@ -262,7 +267,7 @@
             },
             "someRenderer": {
               "renderer": "one",
-              "valueRenderer": {
+              "detailsRenderer": {
                 "renderer": {
                   "type": "Job",
                   "fields": {
@@ -305,6 +310,30 @@
                   }
                 }
               },
+              "previewRenderer": {
+                "renderer": {
+                  "type": "Job",
+                  "fields": {
+                    "Name": {
+                      "renderer": "string",
+                      "label": "Name"
+                    }
+                  },
+                  "tabs": {
+                    "main": {
+                      "columns": {
+                        "main": {
+                          "groups": {
+                            "main": [
+                              "Name"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
               "api": [
                 "User",
                 "UserJobApi"
@@ -314,7 +343,7 @@
           },
           "Team": {
             "renderer": "one",
-            "valueRenderer": {
+            "detailsRenderer": {
               "renderer": "team"
             },
             "api": [
@@ -324,25 +353,62 @@
             "label": "Team"
           },
           "UserGroups": {
-            "renderer": {
-              "type": "UserGroup",
-              "renderer": "table",
-              "columns": {
-                "Name": {
-                  "renderer": "string",
-                  "label": "Name"
+            "renderer": "table",
+            "detailsRenderer": {
+              "renderer": {
+                "type": "UserGroup",
+                "fields": {
+                  "Name": {
+                    "renderer": "string",
+                    "label": "Name",
+                    "disabled": true
+                  },
+                  "Description": {
+                    "renderer": "string",
+                    "label": "Name",
+                    "disabled": true
+                  }
                 },
-                "Description": {
-                  "renderer": "string",
-                  "label": "Description",
-                  "isFilterable": false,
-                  "isSortable": false
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": [
+                            "Name",
+                            "Description"
+                          ]
+                        }
+                      }
+                    }
+                  }
                 }
-              },
-              "visibleColumns": [
-                "Name",
-                "Description"
-              ]              
+              }
+            },
+            "previewRenderer": {
+              "renderer": {
+                "type": "UserGroup",
+                "fields": {
+                  "Name": {
+                    "renderer": "string",
+                    "label": "Name",
+                    "disabled": true
+                  }
+                },
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": [
+                            "Name"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             },
             "api": [
               "User",
@@ -351,7 +417,24 @@
             "label": "User Groups"
           },
           "Activities": {
-            "renderer": "activities",
+            "renderer": {
+              "type": "Activity",
+              "renderer": "table",
+              "columns": {
+                "Log": {
+                  "renderer": "string",
+                  "label": "Name"
+                },
+                "Timestamp": {
+                  "renderer": "date",
+                  "label": "Timestamp"
+                }
+              },
+              "visibleColumns": [
+                "Log",
+                "Timestamp"
+              ]
+            },
             "api": [
               "User",
               "UserActivitiesApi"
@@ -367,9 +450,9 @@
                   "main": [
                     "Name",
                     "Surname",
-                    "Job",
                     "Role",
                     "Team",
+                    "Job",
                     "UserGroups",
                     "Activities"
                   ]

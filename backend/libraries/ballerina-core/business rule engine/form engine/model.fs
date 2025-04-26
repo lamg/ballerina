@@ -154,7 +154,10 @@ module Model =
 
   type CrudMethod =
     | Create
+    | Delete
     | Get
+    | GetMany
+    | GetManyUnlinked
     | Update
     | Default
 
@@ -242,7 +245,7 @@ module Model =
       Enums: Map<string, EnumApi>
       Streams: Map<string, StreamApi>
       Ones: Map<string, EntityApi * Set<CrudMethod>>
-      Manys: Map<string, TableApi> }
+      Manys: Map<string, TableApi * Set<CrudMethod>> }
 
   and FormApis =
     { Enums: Map<string, EnumApi>
@@ -301,11 +304,8 @@ module Model =
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
-         Details:
-           Option<
-             {| FormFields: FormFields
-                ContainerRenderer: Option<string> |}
-            >
+         Details: Option<FormBody>
+         Preview: Option<FormBody>
          Columns: Map<string, Column>
          VisibleColumns: FormGroup
          RowType: ExprType |}
@@ -386,13 +386,15 @@ module Model =
       |}
     | OneRenderer of
       {| One: Renderer
-         Value: NestedRenderer
+         Details: NestedRenderer
+         Preview: Option<NestedRenderer>
          OneApiId: TypeId * string
       //  Children: RendererChildren
       |}
     | ManyRenderer of
       {| Many: Renderer
-         Element: NestedRenderer
+         Details: NestedRenderer
+         Preview: Option<NestedRenderer>
          ManyApiId: TypeId * string
       //  Children: RendererChildren
       |}

@@ -114,8 +114,8 @@ module Patterns =
       | SumRenderer r -> ExprType.SumType(r.Left.Type, r.Right.Type)
       | ListRenderer r -> ExprType.ListType r.Element.Type
       | OptionRenderer r -> ExprType.OptionType r.Some.Type
-      | OneRenderer r -> ExprType.OneType r.Value.Type
-      | ManyRenderer r -> ExprType.ManyType r.Element.Type
+      | OneRenderer r -> ExprType.OneType r.Details.Type
+      | ManyRenderer r -> ExprType.ManyType r.Details.Type
       // | TableRenderer r -> ExprType.TableType r.Row.Type
       | EnumRenderer(_, r)
       | StreamRenderer(_, r) -> r.Type
