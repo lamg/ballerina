@@ -67,26 +67,26 @@ module Validator =
               (apiRowType.Type |> ExprType.TableType)
             |> Sum.map ignore
 
-          // match f.Body with
-          // | FormBody.Table t ->
-          //   match t.Details with
-          //   | Some detailsForm ->
-          //     do!
-          //       detailsForm.FormFields.Fields
-          //       |> Map.values
-          //       |> Seq.map (FieldConfig.Validate codegen ctx apiRowType.Type)
-          //       |> sum.All
-          //       |> Sum.map ignore
-          //   | _ -> return ()
-          // | _ -> return ()
-
           return fr.Type
         | Renderer.OneRenderer(l) ->
           do! !l.One |> Sum.map ignore
           do! !l.Details.Renderer |> Sum.map ignore
 
+          let (apiTypeId, apiName) = l.OneApiId
+          let! _, oneApiMethods = ctx.TryFindOne apiTypeId.TypeName apiName
+
           match l.Preview with
-          | Some preview -> do! !preview.Renderer |> Sum.map ignore
+          | Some preview ->
+            if oneApiMethods |> Set.contains CrudMethod.GetMany |> not then
+              return!
+                sum.Throw(
+                  Errors.Singleton
+                    $"Error: 'one' api {apiTypeId.TypeName} - {apiName} is used in a preview but has no 'GetMany' method."
+                )
+            else
+              return ()
+
+            do! !preview.Renderer |> Sum.map ignore
           | _ -> return ()
 
           return fr.Type
@@ -254,8 +254,17 @@ module Validator =
           do! !!s.Right
 
         | Renderer.StreamRenderer(_, e) -> return! !e
-        | Renderer.FormRenderer(f, e)
-        | Renderer.TableFormRenderer(f, e, _) ->
+        | Renderer.FormRenderer(f, e) ->
+          let! f = ctx.TryFindForm f.FormName |> state.OfSum
+          let! s = state.GetState()
+
+          do! validateFormConfigPredicates ctx globalType rootType f
+
+        | Renderer.TableFormRenderer(f, body, tableApiId) ->
+          // let! f = ctx.TryFindForm f.FormName |> state.OfSum
+          // let! api = ctx.TryFindTableApi tableApiId.TableName |> state.OfSum
+          // let! apiRowType = ctx.TryFindType api.TypeId.TypeName |> state.OfSum
+
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! s = state.GetState()
 
@@ -509,18 +518,11 @@ module Validator =
           return localType
         | _, FormBody.Table table ->
           match table.Details with
-          | Some(details) ->
-            // match details.ContainerRenderer with
-            // | Some containerName ->
-            //   if codegen.ContainerRenderers |> Set.contains containerName |> not then
-            //     return!
-            //       sum.Throw(
-            //         Errors.Singleton $"Error: details form uses non-existing container renderer {containerName}"
-            //       )
-            //   else
-            //     return ()
-            // | None -> return ()
-            return ()
+          | Some details -> do! FormBody.Validate codegen ctx localType details |> Sum.map ignore
+          | None -> return ()
+
+          match table.Preview with
+          | Some preview -> do! FormBody.Validate codegen ctx localType preview |> Sum.map ignore
           | None -> return ()
 
           do!
@@ -577,17 +579,13 @@ module Validator =
 
             do! FieldConfig.ValidatePredicates ctx globalType rootType columnType false column.Value.FieldConfig
 
-          // match table.Details with
-          // | Some details ->
-          //   for fieldConfig in details.FormFields.Fields |> Map.values do
-          //     let! fieldType =
-          //       rowTypeFields
-          //       |> Map.tryFindWithError fieldConfig.FieldName "fields" "fields"
-          //       |> state.OfSum
+            match table.Details with
+            | Some details -> do! FormBody.ValidatePredicates ctx globalType rootType localType details
+            | None -> return ()
 
-          //     do! FieldConfig.ValidatePredicates ctx globalType rootType fieldType true fieldConfig
-
-          // | None -> return ()
+            match table.Preview with
+            | Some preview -> do! FormBody.ValidatePredicates ctx globalType rootType localType preview
+            | None -> return ()
 
           match table.VisibleColumns with
           | Inlined _ -> return ()

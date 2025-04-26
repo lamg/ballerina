@@ -65,30 +65,84 @@
       ✅ visible and disabled inside columns or detail view are not validated
       ✅ inside a detail view renderers we validate with global, root, local
       ✅ inside a column renderer we validate with global, root, but neither row nor local
-    ❌ codegen
-      ❌ identical to entities and tables, but with an extra Id of type of the parent entity
-      ❌ add table methods (get, patch, add, delete, move) to both table and many
-        ❌ filter codegen adequately
-      ❌ disambiguated by name of both `E` and `F`
-      ❌ plus a `GetE:Id -> E` where `E` is the relevant entity
-      ❌ plus a `GetEManyF:E -> Many[F]` or `GetEOneF:E -> One[F]`
-      ❌ if the parent entity has no Id:string|guid, give an error
-    ❌ remove unnecessary parser of details renderer, just use inline with or without lookup
     ✅ one
       ✅ api
-        ❌ methods:[getMany, update, create, delete]
+        ✅ methods:[getMany, update, create, delete]
           ❌ always generate GET:Id -> E x F
-          ❌ if there is getMany, generate GETMany:Id -> E x Table[F]
+
+          ```go
+          func DocumentOneGet[Id any](
+            getUserTeamApi func(Id) (ballerina.Tuple2[User, Team], error),
+            getUserJobApi func(Id) (ballerina.Tuple2[User, Job], error),
+            serializeUserTeamApi func(ballerina.Tuple2[User, Team]) (Result, error),
+            serializeUserJobApi func(ballerina.Tuple2[User, Job]) (Result, error)
+          ) func (entityName string, id Id) (Result, error) {
+            return func (apiName string, id Id) (Result, error) {
+              var nilResult Result;
+              switch apiName {
+                case "UserTeamApi":
+                  return getUserTeamApi >> serializeUserTeamApi;
+                ...
+              }
+              return nilResult, NewOneApiNotFoundError(entityName);
+            }
+          }
+          ```
+
+          ❌ if there is getMany, generate `GETMany:Id -> E x Table[F]`
+
+          ```go
+          func DocumentOneGetMany[Id any, SearchParams any](
+            getUserTeamApi func(Id, SearchParams) (ballerina.Tuple2[User, ballerina.Table[Team]], error),
+            getUserJobApi func(Id, SearchParams) (ballerina.Tuple2[User, ballerina.Table[Job]], error),
+            serializeUserTeamApi func(ballerina.Tuple2[User, ballerina.Table[Team]]) (Result, error),
+            serializeUserJobApi func(ballerina.Tuple2[User, ballerina.Table[Job]]) (Result, error)
+          ) func (entityName string, id Id, searchParams SearchParams) (Result, error) {
+            return func (apiName string, id Id, searchParams SearchParams) (Result, error) {
+              var nilResult Result;
+              switch apiName {
+                case "UserTeamApi":
+                  return getUserTeamApi >> serializeUserTeamApi;
+                ...
+              }
+              return nilResult, NewOneApiNotFoundError(entityName);
+            }
+          }
+          ```
+
           ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
+
+          ```go
+          func DocumentOnePatch[Id any, Result any](
+            deseriailzeUserTeamApi func(Id, ballerina.DeltaBase) (ballerina.Tuple2[User, DeltaTeam], error),
+            deserializeUserJobApi func(Id, ballerina.DeltaBase) (ballerina.Tuple2[User, DeltaTeam], error),
+            commitUserTeamApi func(ballerina.Tuple2[User, DeltaTeam]) (Result, error),
+            commitUserJobApi func(ballerina.Tuple2[User, DeltaTeam]) (Result, error)
+          ) func (entityName string, id Id, delta ballerina.DeltaBase) (Result, error) {
+            return func (apiName string, id Id, delta ballerina.DeltaBase) (Result, error) {
+              var nilResult Result;
+              switch apiName {
+                case "UserTeamApi":
+                  return getUserTeamApi >> serializeUserTeamApi;
+                ...
+              }
+              return nilResult, NewOneApiNotFoundError(entityName);
+            }
+          }
+          ```
+
       ✅ renderer
         ✅ `preview`
-          ❌ required if and only if API has `getMany`
-          ❌ validate exactly like `details`
-      ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
+          ✅ requires that the API has `getMany`
+          ✅ validate exactly like `details`
+      ✅ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
+    ❌ lookup streams
+      ❌ always generate GETMany:Id -> E x F
       ❌ validation
-        ❌ require `Id` if there is any method: getMany and patch both need an `Id`
+        ❌ require `Id` and `DisplayName`
     ❌ many
       ✅ ManyRenderer is just not instantiated or parsed at all apparently
+      ❌ ensure that the API is a proper Many api, and that a Table api may not be used with a Many or viceversa
       ❌ api
         ❌ methods:[update, create, delete, getManyUnlinked]
           ❌ always generate GETMany:Id -> E x Table[F]
@@ -99,13 +153,15 @@
           ❌ validate exactly like `details`
       ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ❌ validation
-        ❌ always require `Id`
+        ❌ (at generation-time) always require `Id`
     ❌ table
       ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ❌ api
         ❌ methods:[update, create, delete]
           ❌ always generate GETMany:Id -> Table[E]
           ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaE
+    ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
+      ❌ this changes the `globalType` during `ValidatePredicate`
     ✅ parse nested forms at the renderer level
       ✅ parse lookup APIs in streams
       ✅ remove the inline union renderer parser
@@ -117,10 +173,12 @@
       ✅ test that unions parse as inline forms correctly
       ✅ test that the inline union form renderer is one of the `Union` `SupportedRenderer`s from the goconfig
     ✅ add streams to Lookup Apis
-    ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
     ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
     ❌ cleanup
-      ❌ many renderer should be harmonized to table renderer - with `columns` and `visibleColumns`, the tabs structure does not make a lot of sense and this will prevent proper filtering and sorting of `Many`
+      ❌ harmonize renderers
+        ❌ add table, record, union Renderer cases
+        ❌ remove InlineRenderer, as well as the "kind-of-inline-but-not-quite" renderers like `TableFormRenderer`
+        ❌ a top-level renderer is a TypeId x Renderer
       ❌ form parser file is too long
         ✅ renderer.type should be in patterns, not runner
         ✅ split off the renderers parsers

@@ -688,7 +688,6 @@ module Renderers =
                                       )
                                 }
                                 |> state.MapError(Errors.WithPriority ErrorPriority.High)
-
                             }
                             state.Throw(
                               Errors.Singleton $"Error: cannot resolve field renderer {s}."
