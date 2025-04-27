@@ -261,6 +261,16 @@
     "GeneratedTypeName": "ballerina.DeltaBase",
     "RequiredImport": "ballerina.com/core"
   },
+  "OneNotFoundError": {
+    "GeneratedTypeName": "ballerina.OneNotFoundError",
+    "RequiredImport": "ballerina.com/core",
+    "Constructor": "ballerina.NewOneNotFoundError"
+  },
+  "ManyNotFoundError": {
+    "GeneratedTypeName": "ballerina.ManyNotFoundError",
+    "RequiredImport": "ballerina.com/core",
+    "Constructor": "ballerina.NewManyNotFoundError"
+  },
   "TableNotFoundError": {
     "GeneratedTypeName": "ballerina.TableNotFoundError",
     "RequiredImport": "ballerina.com/core",

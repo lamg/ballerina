@@ -4,6 +4,32 @@ import (
 	"fmt"
 )
 
+type OneNotFoundError struct {
+	EntityName string
+	OneName string
+}
+
+func (err *OneNotFoundError) Error() string {
+	return fmt.Sprintf("%s/%s is not a valid Entity/One name", err.EntityName, err.OneName)
+}
+
+func NewOneNotFoundError(EntityName string, OneName string) error {
+	return &OneNotFoundError{EntityName: EntityName, OneName: OneName}
+}
+
+type ManyNotFoundError struct {
+	EntityName string
+	ManyName string
+}
+
+func (err *ManyNotFoundError) Error() string {
+	return fmt.Sprintf("%s/%s is not a valid Entity/Many name", err.EntityName, err.ManyName)
+}
+
+func NewManyNotFoundError(EntityName string, ManyName string) error {
+	return &ManyNotFoundError{EntityName: EntityName, ManyName: ManyName}
+}
+
 type TableNotFoundError struct {
 	TableName string
 }

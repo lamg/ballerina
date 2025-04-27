@@ -94,8 +94,21 @@ module Validator =
           do! !l.Many |> Sum.map ignore
           do! !l.Details.Renderer |> Sum.map ignore
 
+          let (apiTypeId, apiName) = l.ManyApiId
+          let! _, manyApiMethods = ctx.TryFindMany apiTypeId.TypeName apiName
+
           match l.Preview with
-          | Some preview -> do! !preview.Renderer |> Sum.map ignore
+          | Some preview ->
+            if manyApiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
+              return!
+                sum.Throw(
+                  Errors.Singleton
+                    $"Error: 'many' api {apiTypeId.TypeName} - {apiName} is used in a preview but has no 'GetMany' method."
+                )
+            else
+              return ()
+
+            do! !preview.Renderer |> Sum.map ignore
           | _ -> return ()
 
           return fr.Type

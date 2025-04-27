@@ -56,6 +56,115 @@ module Main =
 
           let launchersEnum = GolangEnum.Generate () launchersEnum
 
+
+          let! oneGETters =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Ones |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangOneGETters.Generate
+                    ()
+                    { FunctionName = $"{formName}OneGETter"
+                      OneNotFoundErrorConstructor = codegenConfig.OneNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      Ones =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for one in l.Value.Ones do
+                              yield
+                                {| OneName = one.Key
+                                   OneLookupType = lookupTypeName
+                                   OneType = (one.Value |> fst).TypeId.TypeName |}
+
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
+          let! oneGETMANYers =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Ones |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangOneGETMANYers.Generate
+                    ()
+                    { FunctionName = $"{formName}OneGETMANYer"
+                      OneNotFoundErrorConstructor = codegenConfig.OneNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      TableType = codegenConfig.Table.GeneratedTypeName
+                      Ones =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for one in l.Value.Ones do
+                              if one.Value |> snd |> Set.contains CrudMethod.GetMany then
+                                yield
+                                  {| OneName = one.Key
+                                     OneLookupType = lookupTypeName
+                                     OneType = (one.Value |> fst).TypeId.TypeName |}
+
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
+          let! onePATCHers =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Ones |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangOnePATCHers.Generate
+                    ()
+                    { FunctionName = $"{formName}OnePATCHer"
+                      OneNotFoundErrorConstructor = codegenConfig.OneNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      DeltaBaseType = codegenConfig.DeltaBase.GeneratedTypeName
+                      Ones =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for one in l.Value.Ones do
+                              if
+                                one.Value
+                                |> snd
+                                |> Set.intersect (
+                                  Set.ofList [ CrudMethod.Create; CrudMethod.Update; CrudMethod.Delete ]
+                                )
+                                |> Set.isEmpty
+                                |> not
+                              then
+                                yield
+                                  {| OneName = one.Key
+                                     OneLookupType = lookupTypeName
+                                     OneType = (one.Value |> fst).TypeId.TypeName |}
+
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
           let tablesEnum: GolangEnum =
             { Name = $"{formName}TablesEnum"
               Cases =
@@ -324,6 +433,9 @@ module Main =
               StringBuilder.Many(
                 seq {
                   yield heading
+                  yield oneGETters
+                  yield oneGETMANYers
+                  yield onePATCHers
                   yield tablesEnum
                   yield tableGETters
                   yield tablePOSTters

@@ -68,76 +68,17 @@
     ✅ one
       ✅ api
         ✅ methods:[getMany, update, create, delete]
-          ❌ always generate GET:Id -> E x F
-
-          ```go
-          func DocumentOneGet[Id any](
-            getUserTeamApi func(Id) (ballerina.Tuple2[User, Team], error),
-            getUserJobApi func(Id) (ballerina.Tuple2[User, Job], error),
-            serializeUserTeamApi func(ballerina.Tuple2[User, Team]) (Result, error),
-            serializeUserJobApi func(ballerina.Tuple2[User, Job]) (Result, error)
-          ) func (entityName string, id Id) (Result, error) {
-            return func (apiName string, id Id) (Result, error) {
-              var nilResult Result;
-              switch apiName {
-                case "UserTeamApi":
-                  return getUserTeamApi >> serializeUserTeamApi;
-                ...
-              }
-              return nilResult, NewOneApiNotFoundError(entityName);
-            }
-          }
-          ```
-
-          ❌ if there is getMany, generate `GETMany:Id -> E x Table[F]`
-
-          ```go
-          func DocumentOneGetMany[Id any, SearchParams any](
-            getUserTeamApi func(Id, SearchParams) (ballerina.Tuple2[User, ballerina.Table[Team]], error),
-            getUserJobApi func(Id, SearchParams) (ballerina.Tuple2[User, ballerina.Table[Job]], error),
-            serializeUserTeamApi func(ballerina.Tuple2[User, ballerina.Table[Team]]) (Result, error),
-            serializeUserJobApi func(ballerina.Tuple2[User, ballerina.Table[Job]]) (Result, error)
-          ) func (entityName string, id Id, searchParams SearchParams) (Result, error) {
-            return func (apiName string, id Id, searchParams SearchParams) (Result, error) {
-              var nilResult Result;
-              switch apiName {
-                case "UserTeamApi":
-                  return getUserTeamApi >> serializeUserTeamApi;
-                ...
-              }
-              return nilResult, NewOneApiNotFoundError(entityName);
-            }
-          }
-          ```
-
-          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
-
-          ```go
-          func DocumentOnePatch[Id any, Result any](
-            deseriailzeUserTeamApi func(Id, ballerina.DeltaBase) (ballerina.Tuple2[User, DeltaTeam], error),
-            deserializeUserJobApi func(Id, ballerina.DeltaBase) (ballerina.Tuple2[User, DeltaTeam], error),
-            commitUserTeamApi func(ballerina.Tuple2[User, DeltaTeam]) (Result, error),
-            commitUserJobApi func(ballerina.Tuple2[User, DeltaTeam]) (Result, error)
-          ) func (entityName string, id Id, delta ballerina.DeltaBase) (Result, error) {
-            return func (apiName string, id Id, delta ballerina.DeltaBase) (Result, error) {
-              var nilResult Result;
-              switch apiName {
-                case "UserTeamApi":
-                  return getUserTeamApi >> serializeUserTeamApi;
-                ...
-              }
-              return nilResult, NewOneApiNotFoundError(entityName);
-            }
-          }
-          ```
-
+          ✅ always generate GET:Id -> E x F
+          ✅ if there is getMany, generate `GETMany:Id -> E x Table[F]`
+          ✅ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
+          ✅ disambiguate names of callbacks uniquely as `LookupEntityName__OneName`
       ✅ renderer
         ✅ `preview`
           ✅ requires that the API has `getMany`
           ✅ validate exactly like `details`
       ✅ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
     ❌ lookup streams
-      ❌ always generate GETMany:Id -> E x F
+      ❌ always generate GETMany:Id x SearchParams -> E x F
       ❌ validation
         ❌ require `Id` and `DisplayName`
     ❌ many
@@ -145,12 +86,13 @@
       ❌ ensure that the API is a proper Many api, and that a Table api may not be used with a Many or viceversa
       ❌ api
         ❌ methods:[update, create, delete, getManyUnlinked]
-          ❌ always generate GETMany:Id -> E x Table[F]
+          ❌ always generate GETMany:Id x SearchParams -> E x Table[F]
+          ❌ only if there is method getManyUnlinked generate GETManyUnlinked:Id x SearchParams -> E x Table[F]
           ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
       ✅ renderer
         ✅ `preview`
-          ❌ required if and only if API has `getManyUnlinked`
-          ❌ validate exactly like `details`
+          ✅ requires that the API has `getManyUnlinked`
+          ✅ validate exactly like `details`
       ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ❌ validation
         ❌ (at generation-time) always require `Id`

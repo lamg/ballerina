@@ -28,6 +28,8 @@ module Model =
       IdentifierAllowedRegex: string
       DeltaBase: CodegenConfigInterfaceDef
       EntityNotFoundError: CodegenConfigErrorDef
+      OneNotFoundError: CodegenConfigErrorDef
+      ManyNotFoundError: CodegenConfigErrorDef
       TableNotFoundError: CodegenConfigErrorDef
       EntityNameAndDeltaTypeMismatchError: CodegenConfigErrorDef
       EnumNotFoundError: CodegenConfigErrorDef
