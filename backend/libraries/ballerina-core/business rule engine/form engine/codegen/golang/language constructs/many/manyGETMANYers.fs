@@ -5,38 +5,38 @@ open Ballerina.DSL.FormEngine.Model
 open Ballerina.Core
 open Enum
 
-type GolangOneGETMANYers =
+type GolangManyGETMANYers =
   { FunctionName: string
-    OneNotFoundErrorConstructor: string
+    ManyNotFoundErrorConstructor: string
     Tuple2Type: string
     TableType: string
-    Ones:
+    Manys:
       List<
-        {| OneName: string
-           OneLookupType: string
-           OneType: string |}
+        {| ManyName: string
+           ManyLookupType: string
+           ManyType: string |}
        > }
 
-  static member Generate (ctx: GolangContext) (ones: GolangOneGETMANYers) =
+  static member Generate (ctx: GolangContext) (manys: GolangManyGETMANYers) =
     StringBuilder.Many(
       seq {
-        yield StringBuilder.One $"func {ones.FunctionName}[Id any, SearchParams any, Result any]("
+        yield StringBuilder.One $"func {manys.FunctionName}[Id any, SearchParams any, Result any]("
         yield StringBuilder.One "\n"
 
-        for t in ones.Ones do
+        for t in manys.Manys do
           yield
             StringBuilder.Many(
               seq {
                 yield
                   StringBuilder.One(
-                    $"  get{t.OneLookupType}__{t.OneName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.OneLookupType}, {ones.TableType}[{t.OneType}]],error), "
+                    $"  get{t.ManyLookupType}__{t.ManyName} func (Id, SearchParams) ({manys.Tuple2Type}[{t.ManyLookupType}, {manys.TableType}[{t.ManyType}]],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  serialize{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, {ones.TableType}[{t.OneType}]]) (Result,error), "
+                    $"  serialize{t.ManyLookupType}__{t.ManyName} func ({manys.Tuple2Type}[{t.ManyLookupType}, {manys.TableType}[{t.ManyType}]]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"
@@ -50,24 +50,25 @@ type GolangOneGETMANYers =
         yield StringBuilder.One "    var resultNil Result;\n"
         yield StringBuilder.One "    switch (true) {\n"
 
-        for t in ones.Ones do
-          yield StringBuilder.One $$"""      case (apiName == "{{t.OneName}}" && entityName == "{{t.OneType}}"):  """
+        for t in manys.Manys do
+          yield StringBuilder.One $$"""      case (apiName == "{{t.ManyName}}" && entityName == "{{t.ManyType}}"):  """
           yield StringBuilder.One "\n"
 
           yield
-            StringBuilder.One $$"""        var res, err = get{{t.OneLookupType}}__{{t.OneName}}(id, searchParams);  """
+            StringBuilder.One
+              $$"""        var res, err = get{{t.ManyLookupType}}__{{t.ManyName}}(id, searchParams);  """
 
           yield StringBuilder.One "\n"
 
           yield StringBuilder.One $$"""        if err != nil { return resultNil, err }  """
           yield StringBuilder.One "\n"
-          yield StringBuilder.One $$"""        return serialize{{t.OneLookupType}}__{{t.OneName}}(res); """
+          yield StringBuilder.One $$"""        return serialize{{t.ManyLookupType}}__{{t.ManyName}}(res); """
 
           yield StringBuilder.One "\n"
 
         yield StringBuilder.One "    }\n"
 
-        yield StringBuilder.One $"    return resultNil, {ones.OneNotFoundErrorConstructor}(entityName, apiName);\n"
+        yield StringBuilder.One $"    return resultNil, {manys.ManyNotFoundErrorConstructor}(entityName, apiName);\n"
 
         yield StringBuilder.One "  }\n"
         yield StringBuilder.One "}\n\n"

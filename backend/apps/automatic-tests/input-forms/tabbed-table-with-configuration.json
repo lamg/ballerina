@@ -150,9 +150,8 @@
           "UserJobApi": {
             "type": "Job",
             "methods": [
-              "get",
               "update",
-              "getMany",
+              "getManyUnlinked",
               "create",
               "delete"
             ]

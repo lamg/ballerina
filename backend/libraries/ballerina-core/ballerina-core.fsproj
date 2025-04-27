@@ -64,8 +64,11 @@
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/table/tablePOSTers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/table/tablePATCHers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/oneGETters.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/oneGETMANYers.fs" />
+    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/oneGETMANYUNLINKEDers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/onePATCHers.fs" />
+    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/many/manyGETMANYers.fs" />
+    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/many/manyGETMANYUNLINKEDers.fs" />
+    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/many/manyPATCHers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum/enumGETters.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum/enumPOSTers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamGETters.fs" />

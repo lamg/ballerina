@@ -82,14 +82,13 @@
       ✅ always generate GETMany:Id x SearchParams -> E x F
       ✅ validation
         ✅ require `Id` and `DisplayName`
-    ❌ many
+    ✅ many
       ✅ ManyRenderer is just not instantiated or parsed at all apparently
-      ❌ api
-        ❌ methods:[update, create, delete, getManyUnlinked]
-          ❌ always generate GETMany:Id x SearchParams -> E x Table[F]
-          ❌ only if there is method getManyUnlinked generate GETManyUnlinked:Id x SearchParams -> E x Table[F]
-          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaMany[F, DeltaF] -> E
-            ❌ define a proper `DeltaMany` with methods `Create, Delete, Link, Unlink` as well
+      ✅ api
+        ✅ methods:[update, create, delete, getManyUnlinked]
+          ✅ always generate GETMany:Id x SearchParams -> E x Table[F]
+          ✅ only if there is method getManyUnlinked generate GETManyUnlinked:Id x SearchParams -> E x Table[F]
+          ✅ only if at least one between update, create, delete, generate PATCH:Id x DeltaMany[F, DeltaF] -> E
       ✅ renderer
         ✅ `preview`
           ✅ requires that the API has `getManyUnlinked`
@@ -98,6 +97,9 @@
       ✅ validation
         ✅ always require `Id`
     ❌ define a proper `One` and `DeltaOne` with methods `Create, Delete, Link, Unlink` as well
+      ❌ use it in the sample go-config
+    ❌ define a proper `DeltaMany` with methods `Create, Delete, Link, Unlink` as well
+      ❌ use it in the sample go-config
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
     ✅ parse nested forms at the renderer level

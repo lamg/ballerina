@@ -89,7 +89,7 @@ module Main =
                 return StringBuilder.Many []
             }
 
-          let! oneGETMANYers =
+          let! oneGETMANYUNLINKEDers =
             state {
               if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Ones |> Map.isEmpty |> not) then
                 let! tuple2Config =
@@ -99,9 +99,9 @@ module Main =
                   |> state.OfSum
 
                 return
-                  GolangOneGETMANYers.Generate
+                  GolangOneGETMANYUNLINKEDers.Generate
                     ()
-                    { FunctionName = $"{formName}OneGETMANYer"
+                    { FunctionName = $"{formName}OneGETMANYUNLINKEDer"
                       OneNotFoundErrorConstructor = codegenConfig.OneNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
                       TableType = codegenConfig.Table.GeneratedTypeName
@@ -111,7 +111,7 @@ module Main =
                             let lookupTypeName = l.Key
 
                             for one in l.Value.Ones do
-                              if one.Value |> snd |> Set.contains CrudMethod.GetMany then
+                              if one.Value |> snd |> Set.contains CrudMethod.GetManyUnlinked then
                                 yield
                                   {| OneName = one.Key
                                      OneLookupType = lookupTypeName
@@ -168,7 +168,7 @@ module Main =
 
           let! streamGETMANYers =
             state {
-              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Ones |> Map.isEmpty |> not) then
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Streams |> Map.isEmpty |> not) then
                 let! tuple2Config =
                   codegenConfig.Tuple
                   |> Seq.tryFind (fun t -> t.Ariety = 2)
@@ -192,6 +192,115 @@ module Main =
                                 {| StreamName = stream.Key
                                    StreamLookupType = lookupTypeName
                                    StreamType = stream.Value.TypeId.TypeName |}
+
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
+          let! manyGETMANYers =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Manys |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangManyGETMANYers.Generate
+                    ()
+                    { FunctionName = $"{formName}ManyGETMANYer"
+                      ManyNotFoundErrorConstructor = codegenConfig.ManyNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      TableType = codegenConfig.Table.GeneratedTypeName
+                      Manys =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for many in l.Value.Manys do
+                              yield
+                                {| ManyName = many.Key
+                                   ManyLookupType = lookupTypeName
+                                   ManyType = (many.Value |> fst).TypeId.TypeName |}
+
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
+          let! manyPATCHers =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Manys |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangManyPATCHers.Generate
+                    ()
+                    { FunctionName = $"{formName}ManyPATCHer"
+                      ManyNotFoundErrorConstructor = codegenConfig.ManyNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      DeltaManyType = codegenConfig.Table.DeltaTypeName
+                      DeltaBaseType = codegenConfig.DeltaBase.GeneratedTypeName
+                      Manys =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for many in l.Value.Manys do
+                              if
+                                many.Value
+                                |> snd
+                                |> Set.intersect (
+                                  Set.ofList [ CrudMethod.Create; CrudMethod.Update; CrudMethod.Delete ]
+                                )
+                                |> Set.isEmpty
+                                |> not
+                              then
+                                yield
+                                  {| ManyName = many.Key
+                                     ManyLookupType = lookupTypeName
+                                     ManyType = (many.Value |> fst).TypeId.TypeName |}
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
+          let! manyGETMANYUNLINKEDers =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Manys |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangManyGETMANYUNLINKEDers.Generate
+                    ()
+                    { FunctionName = $"{formName}ManyGETMANYUNLINKEDer"
+                      ManyNotFoundErrorConstructor = codegenConfig.ManyNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      TableType = codegenConfig.Table.GeneratedTypeName
+                      Manys =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for many in l.Value.Manys do
+                              if many.Value |> snd |> Set.contains CrudMethod.GetManyUnlinked then
+                                yield
+                                  {| ManyName = many.Key
+                                     ManyLookupType = lookupTypeName
+                                     ManyType = (many.Value |> fst).TypeId.TypeName |}
 
                         }
                         |> List.ofSeq }
@@ -467,8 +576,11 @@ module Main =
               StringBuilder.Many(
                 seq {
                   yield heading
+                  yield manyGETMANYers
+                  yield manyPATCHers
+                  yield manyGETMANYUNLINKEDers
                   yield oneGETters
-                  yield oneGETMANYers
+                  yield oneGETMANYUNLINKEDers
                   yield onePATCHers
                   yield tablesEnum
                   yield tableGETters

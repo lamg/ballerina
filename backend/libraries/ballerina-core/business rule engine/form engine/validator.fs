@@ -77,7 +77,7 @@ module Validator =
 
           match l.Preview with
           | Some preview ->
-            if oneApiMethods |> Set.contains CrudMethod.GetMany |> not then
+            if oneApiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
               return!
                 sum.Throw(
                   Errors.Singleton
