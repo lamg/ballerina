@@ -4,6 +4,19 @@ import (
 	"fmt"
 )
 
+type LookupStreamNotFoundError struct {
+	EntityName string
+	LookupStreamName string
+}
+
+func (err *LookupStreamNotFoundError) Error() string {
+	return fmt.Sprintf("%s/%s is not a valid Entity/LookupStream name", err.EntityName, err.LookupStreamName)
+}
+
+func NewLookupStreamNotFoundError(EntityName string, LookupStreamName string) error {
+	return &LookupStreamNotFoundError{EntityName: EntityName, LookupStreamName: LookupStreamName}
+}
+
 type OneNotFoundError struct {
 	EntityName string
 	OneName string

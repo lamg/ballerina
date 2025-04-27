@@ -29,6 +29,7 @@ module Model =
       DeltaBase: CodegenConfigInterfaceDef
       EntityNotFoundError: CodegenConfigErrorDef
       OneNotFoundError: CodegenConfigErrorDef
+      LookupStreamNotFoundError: CodegenConfigErrorDef
       ManyNotFoundError: CodegenConfigErrorDef
       TableNotFoundError: CodegenConfigErrorDef
       EntityNameAndDeltaTypeMismatchError: CodegenConfigErrorDef

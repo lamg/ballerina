@@ -165,6 +165,39 @@ module Main =
                 return StringBuilder.Many []
             }
 
+          let! streamGETMANYers =
+            state {
+              if ctx.Apis.Lookups |> Seq.exists (fun l -> l.Value.Ones |> Map.isEmpty |> not) then
+                let! tuple2Config =
+                  codegenConfig.Tuple
+                  |> Seq.tryFind (fun t -> t.Ariety = 2)
+                  |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple 2.")
+                  |> state.OfSum
+
+                return
+                  GolangStreamGETMANYers.Generate
+                    ()
+                    { FunctionName = $"{formName}StreamGETMANYer"
+                      StreamNotFoundErrorConstructor = codegenConfig.LookupStreamNotFoundError.Constructor
+                      Tuple2Type = tuple2Config.GeneratedTypeName
+                      TableType = codegenConfig.Table.GeneratedTypeName
+                      Ones =
+                        seq {
+                          for l in ctx.Apis.Lookups do
+                            let lookupTypeName = l.Key
+
+                            for stream in l.Value.Streams do
+                              yield
+                                {| StreamName = stream.Key
+                                   StreamLookupType = lookupTypeName
+                                   StreamType = stream.Value.TypeId.TypeName |}
+
+                        }
+                        |> List.ofSeq }
+              else
+                return StringBuilder.Many []
+            }
+
           let tablesEnum: GolangEnum =
             { Name = $"{formName}TablesEnum"
               Cases =
@@ -450,6 +483,7 @@ module Main =
                   yield enumCasesGETters
                   yield enumCasesPOSTters
                   yield streamGETters
+                  yield streamGETMANYers
                   yield streamPOSTters
                   yield! generatedTypes
                   yield customTypes

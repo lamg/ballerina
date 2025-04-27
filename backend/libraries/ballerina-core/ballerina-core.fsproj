@@ -69,6 +69,7 @@
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum/enumGETters.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum/enumPOSTers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamGETters.fs" />
+    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamGETMANYers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamPOSTers.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/ExprTypeToAnnotation.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/ExprTypeToWriter.fs" />

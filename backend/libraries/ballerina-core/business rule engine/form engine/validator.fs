@@ -922,6 +922,30 @@ module Validator =
       }
       |> sum.WithErrorContext $"...when validating table {tableApi.TableName}"
 
+  type LookupApi with
+    static member Validate
+      (generatedLanguageSpecificConfig: GeneratedLanguageSpecificConfig)
+      (ctx: ParsedFormsContext)
+      (lookupApi: LookupApi)
+      : Sum<Unit, Errors> =
+      sum {
+        do!
+          lookupApi.Streams
+          |> Map.values
+          |> Seq.map (fun s -> StreamApi.Validate generatedLanguageSpecificConfig ctx s)
+          |> sum.All
+          |> Sum.map ignore
+
+        do!
+          lookupApi.Manys
+          |> Map.values
+          |> Seq.map (fun (m, _) -> TableApi.Validate generatedLanguageSpecificConfig ctx m)
+          |> sum.All
+          |> Sum.map ignore
+
+        return ()
+      }
+
   type ParsedFormsContext with
     static member Validate
       codegenTargetConfig
@@ -953,6 +977,16 @@ module Validator =
             ctx.Apis.Tables
             |> Map.values
             |> Seq.map (TableApi.Validate codegenTargetConfig ctx)
+            |> Seq.toList
+          )
+          |> Sum.map ignore
+          |> state.OfSum
+
+        do!
+          sum.All(
+            ctx.Apis.Lookups
+            |> Map.values
+            |> Seq.map (LookupApi.Validate codegenTargetConfig ctx)
             |> Seq.toList
           )
           |> Sum.map ignore

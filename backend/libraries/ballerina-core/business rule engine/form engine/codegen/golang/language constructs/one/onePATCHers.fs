@@ -46,14 +46,14 @@ type GolangOnePATCHers =
               seq {
                 yield
                   StringBuilder.One(
-                    $"  deserialize{t.OneLookupType}__{t.OneName} func (Id, {ones.DeltaBaseType}) ({ones.Tuple2Type}[{t.OneType}, Delta{t.OneLookupType}],error), "
+                    $"  deserialize{t.OneLookupType}__{t.OneName} func (Id, {ones.DeltaBaseType}) ({ones.Tuple2Type}[{t.OneLookupType}, Delta{t.OneType}],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  commit{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneType}, Delta{t.OneLookupType}]) (Result,error), "
+                    $"  commit{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, Delta{t.OneType}]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"

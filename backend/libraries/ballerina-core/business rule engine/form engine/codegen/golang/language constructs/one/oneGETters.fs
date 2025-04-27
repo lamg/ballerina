@@ -28,14 +28,14 @@ type GolangOneGETters =
               seq {
                 yield
                   StringBuilder.One(
-                    $"  get{t.OneLookupType}__{t.OneName} func (Id) ({ones.Tuple2Type}[{t.OneType}, {t.OneLookupType}],error), "
+                    $"  get{t.OneLookupType}__{t.OneName} func (Id) ({ones.Tuple2Type}[{t.OneLookupType}, {t.OneType}],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  serialize{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneType}, {t.OneLookupType}]) (Result,error), "
+                    $"  serialize{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, {t.OneType}]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"

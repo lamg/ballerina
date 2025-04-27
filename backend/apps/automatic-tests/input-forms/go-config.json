@@ -266,6 +266,11 @@
     "RequiredImport": "ballerina.com/core",
     "Constructor": "ballerina.NewOneNotFoundError"
   },
+  "LookupStreamNotFoundError": {
+    "GeneratedTypeName": "ballerina.LookupStreamNotFoundError",
+    "RequiredImport": "ballerina.com/core",
+    "Constructor": "ballerina.NewLookupStreamNotFoundError"
+  },
   "ManyNotFoundError": {
     "GeneratedTypeName": "ballerina.ManyNotFoundError",
     "RequiredImport": "ballerina.com/core",

@@ -5,19 +5,19 @@ open Ballerina.DSL.FormEngine.Model
 open Ballerina.Core
 open Enum
 
-type GolangOneGETMANYers =
+type GolangStreamGETMANYers =
   { FunctionName: string
-    OneNotFoundErrorConstructor: string
+    StreamNotFoundErrorConstructor: string
     Tuple2Type: string
     TableType: string
     Ones:
       List<
-        {| OneName: string
-           OneLookupType: string
-           OneType: string |}
+        {| StreamName: string
+           StreamLookupType: string
+           StreamType: string |}
        > }
 
-  static member Generate (ctx: GolangContext) (ones: GolangOneGETMANYers) =
+  static member Generate (ctx: GolangContext) (ones: GolangStreamGETMANYers) =
     StringBuilder.Many(
       seq {
         yield StringBuilder.One $"func {ones.FunctionName}[Id any, SearchParams any, Result any]("
@@ -29,14 +29,14 @@ type GolangOneGETMANYers =
               seq {
                 yield
                   StringBuilder.One(
-                    $"  get{t.OneLookupType}__{t.OneName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.OneLookupType}, {ones.TableType}[{t.OneType}]],error), "
+                    $"  get{t.StreamLookupType}__{t.StreamName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.StreamLookupType}, {ones.TableType}[{t.StreamType}]],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  serialize{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, {ones.TableType}[{t.OneType}]]) (Result,error), "
+                    $"  serialize{t.StreamLookupType}__{t.StreamName} func ({ones.Tuple2Type}[{t.StreamLookupType}, {ones.TableType}[{t.StreamType}]]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"
@@ -51,23 +51,26 @@ type GolangOneGETMANYers =
         yield StringBuilder.One "    switch (true) {\n"
 
         for t in ones.Ones do
-          yield StringBuilder.One $$"""      case (apiName == "{{t.OneName}}" && entityName == "{{t.OneType}}"):  """
+          yield
+            StringBuilder.One $$"""      case (apiName == "{{t.StreamName}}" && entityName == "{{t.StreamType}}"):  """
+
           yield StringBuilder.One "\n"
 
           yield
-            StringBuilder.One $$"""        var res, err = get{{t.OneLookupType}}__{{t.OneName}}(id, searchParams);  """
+            StringBuilder.One
+              $$"""        var res, err = get{{t.StreamLookupType}}__{{t.StreamName}}(id, searchParams);  """
 
           yield StringBuilder.One "\n"
 
           yield StringBuilder.One $$"""        if err != nil { return resultNil, err }  """
           yield StringBuilder.One "\n"
-          yield StringBuilder.One $$"""        return serialize{{t.OneLookupType}}__{{t.OneName}}(res); """
+          yield StringBuilder.One $$"""        return serialize{{t.StreamLookupType}}__{{t.StreamName}}(res); """
 
           yield StringBuilder.One "\n"
 
         yield StringBuilder.One "    }\n"
 
-        yield StringBuilder.One $"    return resultNil, {ones.OneNotFoundErrorConstructor}(entityName, apiName);\n"
+        yield StringBuilder.One $"    return resultNil, {ones.StreamNotFoundErrorConstructor}(entityName, apiName);\n"
 
         yield StringBuilder.One "  }\n"
         yield StringBuilder.One "}\n\n"
