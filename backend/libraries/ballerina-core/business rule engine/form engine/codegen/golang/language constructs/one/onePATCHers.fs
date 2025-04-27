@@ -10,6 +10,7 @@ type GolangOnePATCHers =
     OneNotFoundErrorConstructor: string
     Tuple2Type: string
     DeltaBaseType: string
+    DeltaOneType: string
     Ones:
       List<
         {| OneName: string
@@ -23,37 +24,20 @@ type GolangOnePATCHers =
         yield StringBuilder.One $"func {ones.FunctionName}[Id any, Result any]("
         yield StringBuilder.One "\n"
 
-        (*
-          func DocumentOnePatch[Id any, Result any](
-            deserializeUserJobApi func(Id, ballerina.DeltaBase) (ballerina.Tuple2[User, DeltaTeam], error),
-            commitUserJobApi func(ballerina.Tuple2[User, DeltaTeam]) (Result, error)
-          ) func (entityName string, id Id, delta ballerina.DeltaBase) (Result, error) {
-            return func (apiName string, id Id, delta ballerina.DeltaBase) (Result, error) {
-              var nilResult Result;
-              switch apiName {
-                case "UserTeamApi":
-                  return getUserTeamApi >> serializeUserTeamApi;
-                ...
-              }
-              return nilResult, NewOneApiNotFoundError(entityName);
-            }
-          }
-        *)
-
         for t in ones.Ones do
           yield
             StringBuilder.Many(
               seq {
                 yield
                   StringBuilder.One(
-                    $"  deserialize{t.OneLookupType}__{t.OneName} func (Id, {ones.DeltaBaseType}) ({ones.Tuple2Type}[{t.OneLookupType}, Delta{t.OneType}],error), "
+                    $"  deserialize{t.OneLookupType}__{t.OneName} func (Id, {ones.DeltaBaseType}) ({ones.Tuple2Type}[{t.OneLookupType}, {ones.DeltaOneType}[{t.OneType},Delta{t.OneType}]],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  commit{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, Delta{t.OneType}]) (Result,error), "
+                    $"  commit{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, {ones.DeltaOneType}[{t.OneType},Delta{t.OneType}]]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"

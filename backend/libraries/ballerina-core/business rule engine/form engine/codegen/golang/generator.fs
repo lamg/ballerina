@@ -138,6 +138,7 @@ module Main =
                     { FunctionName = $"{formName}OnePATCHer"
                       OneNotFoundErrorConstructor = codegenConfig.OneNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
+                      DeltaOneType = codegenConfig.One.DeltaTypeName
                       DeltaBaseType = codegenConfig.DeltaBase.GeneratedTypeName
                       Ones =
                         seq {

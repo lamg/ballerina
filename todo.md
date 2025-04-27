@@ -71,7 +71,7 @@
           ✅ always generate GET:Id -> E x F
           ✅ if there is getMany, generate `GETMany:Id -> E x Table[F]`
           ✅ only if at least one between update, create, delete, generate PATCH:Id x DeltaF -> E
-            ❌ PATCH works on `DeltaOne[A, DeltaA]`, which also includes `Create` and `Delete`
+            ✅ PATCH works on `DeltaOne[A, DeltaA]`, which also includes `Create` and `Delete`
           ✅ disambiguate names of callbacks uniquely as `LookupEntityName__OneName`
       ✅ renderer
         ✅ `preview`
@@ -84,12 +84,12 @@
         ✅ require `Id` and `DisplayName`
     ❌ many
       ✅ ManyRenderer is just not instantiated or parsed at all apparently
-      ❌ ensure that the API is a proper Many api, and that a Table api may not be used with a Many or viceversa
       ❌ api
         ❌ methods:[update, create, delete, getManyUnlinked]
           ❌ always generate GETMany:Id x SearchParams -> E x Table[F]
           ❌ only if there is method getManyUnlinked generate GETManyUnlinked:Id x SearchParams -> E x Table[F]
-          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaTable[F, DeltaF] -> E
+          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaMany[F, DeltaF] -> E
+            ❌ define a proper `DeltaMany` with methods `Create, Delete, Link, Unlink` as well
       ✅ renderer
         ✅ `preview`
           ✅ requires that the API has `getManyUnlinked`
@@ -97,12 +97,7 @@
       ✅ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ✅ validation
         ✅ always require `Id`
-    ❌ table
-      ❌ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
-      ❌ api
-        ❌ methods:[update, create, delete]
-          ❌ always generate GETMany:Id -> Table[E]
-          ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaE
+    ❌ define a proper `One` and `DeltaOne` with methods `Create, Delete, Link, Unlink` as well
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
     ✅ parse nested forms at the renderer level
@@ -118,6 +113,11 @@
     ✅ add streams to Lookup Apis
     ✅ plenty of nonsense `Id` fields in enumApiId, streamApiId, etc.
     ❌ cleanup
+      ❌ harmonize `Table` codegen to `Many`
+        ❌ api
+          ❌ methods:[update, create, delete]
+            ❌ always generate GETMany:Id -> Table[E]
+            ❌ only if at least one between update, create, delete, generate PATCH:Id x DeltaE
       ❌ harmonize renderers
         ❌ add table, record, union Renderer cases
         ❌ remove InlineRenderer, as well as the "kind-of-inline-but-not-quite" renderers like `TableFormRenderer`
