@@ -9,7 +9,7 @@ type GolangManyGETMANYers =
   { FunctionName: string
     ManyNotFoundErrorConstructor: string
     Tuple2Type: string
-    TableType: string
+    ManyType: string
     Manys:
       List<
         {| ManyName: string
@@ -29,14 +29,14 @@ type GolangManyGETMANYers =
               seq {
                 yield
                   StringBuilder.One(
-                    $"  get{t.ManyLookupType}__{t.ManyName} func (Id, SearchParams) ({manys.Tuple2Type}[{t.ManyLookupType}, {manys.TableType}[{t.ManyType}]],error), "
+                    $"  get{t.ManyLookupType}__{t.ManyName} func (Id, SearchParams) ({manys.Tuple2Type}[{t.ManyLookupType}, {manys.ManyType}[{t.ManyType}]],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  serialize{t.ManyLookupType}__{t.ManyName} func ({manys.Tuple2Type}[{t.ManyLookupType}, {manys.TableType}[{t.ManyType}]]) (Result,error), "
+                    $"  serialize{t.ManyLookupType}__{t.ManyName} func ({manys.Tuple2Type}[{t.ManyLookupType}, {manys.ManyType}[{t.ManyType}]]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"

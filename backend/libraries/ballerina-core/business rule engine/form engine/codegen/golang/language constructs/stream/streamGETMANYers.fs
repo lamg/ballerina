@@ -9,7 +9,7 @@ type GolangStreamGETMANYers =
   { FunctionName: string
     StreamNotFoundErrorConstructor: string
     Tuple2Type: string
-    TableType: string
+    ManyType: string
     Ones:
       List<
         {| StreamName: string
@@ -29,14 +29,14 @@ type GolangStreamGETMANYers =
               seq {
                 yield
                   StringBuilder.One(
-                    $"  get{t.StreamLookupType}__{t.StreamName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.StreamLookupType}, {ones.TableType}[{t.StreamType}]],error), "
+                    $"  get{t.StreamLookupType}__{t.StreamName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.StreamLookupType}, {ones.ManyType}[{t.StreamType}]],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  serialize{t.StreamLookupType}__{t.StreamName} func ({ones.Tuple2Type}[{t.StreamLookupType}, {ones.TableType}[{t.StreamType}]]) (Result,error), "
+                    $"  serialize{t.StreamLookupType}__{t.StreamName} func ({ones.Tuple2Type}[{t.StreamLookupType}, {ones.ManyType}[{t.StreamType}]]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"

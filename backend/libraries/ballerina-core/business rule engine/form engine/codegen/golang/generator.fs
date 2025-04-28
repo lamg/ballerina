@@ -104,7 +104,7 @@ module Main =
                     { FunctionName = $"{formName}OneGETMANYUNLINKEDer"
                       OneNotFoundErrorConstructor = codegenConfig.OneNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
-                      TableType = codegenConfig.Table.GeneratedTypeName
+                      ManyType = codegenConfig.Many.GeneratedTypeName
                       Ones =
                         seq {
                           for l in ctx.Apis.Lookups do
@@ -181,7 +181,7 @@ module Main =
                     { FunctionName = $"{formName}StreamGETMANYer"
                       StreamNotFoundErrorConstructor = codegenConfig.LookupStreamNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
-                      TableType = codegenConfig.Table.GeneratedTypeName
+                      ManyType = codegenConfig.Many.GeneratedTypeName
                       Ones =
                         seq {
                           for l in ctx.Apis.Lookups do
@@ -214,7 +214,7 @@ module Main =
                     { FunctionName = $"{formName}ManyGETMANYer"
                       ManyNotFoundErrorConstructor = codegenConfig.ManyNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
-                      TableType = codegenConfig.Table.GeneratedTypeName
+                      ManyType = codegenConfig.Many.GeneratedTypeName
                       Manys =
                         seq {
                           for l in ctx.Apis.Lookups do
@@ -247,7 +247,7 @@ module Main =
                     { FunctionName = $"{formName}ManyPATCHer"
                       ManyNotFoundErrorConstructor = codegenConfig.ManyNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
-                      DeltaManyType = codegenConfig.Table.DeltaTypeName
+                      DeltaManyType = codegenConfig.Many.DeltaTypeName
                       DeltaBaseType = codegenConfig.DeltaBase.GeneratedTypeName
                       Manys =
                         seq {
@@ -289,7 +289,7 @@ module Main =
                     { FunctionName = $"{formName}ManyGETMANYUNLINKEDer"
                       ManyNotFoundErrorConstructor = codegenConfig.ManyNotFoundError.Constructor
                       Tuple2Type = tuple2Config.GeneratedTypeName
-                      TableType = codegenConfig.Table.GeneratedTypeName
+                      ManyType = codegenConfig.Many.GeneratedTypeName
                       Manys =
                         seq {
                           for l in ctx.Apis.Lookups do

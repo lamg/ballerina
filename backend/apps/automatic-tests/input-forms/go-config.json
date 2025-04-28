@@ -81,14 +81,14 @@
     "DefaultConstructor": "ballerina.DefaultSet"
   },
   "One": {
-    "GeneratedTypeName": "ballerina.Option",
-    "DeltaTypeName": "ballerina.DeltaOption",
+    "GeneratedTypeName": "ballerina.One",
+    "DeltaTypeName": "ballerina.DeltaOne",
     "RequiredImport": "ballerina.com/core",
     "SupportedRenderers": [
       "one"
     ],
-    "MappingFunction": "ballerina.MapOption",
-    "DefaultConstructor": "ballerina.DefaultOption"
+    "MappingFunction": "ballerina.MapOne",
+    "DefaultConstructor": "ballerina.DefaultOne"
   },
   "List": {
     "GeneratedTypeName": "ballerina.Array",
@@ -109,6 +109,16 @@
     ],
     "MappingFunction": "ballerina.MapTable",
     "DefaultConstructor": "ballerina.DefaultTable"
+  },
+  "Many": {
+    "GeneratedTypeName": "ballerina.Many",
+    "DeltaTypeName": "ballerina.DeltaMany",
+    "RequiredImport": "ballerina.com/core",
+    "SupportedRenderers": [
+      "many"
+    ],
+    "MappingFunction": "ballerina.MapMany",
+    "DefaultConstructor": "ballerina.DefaultMany"
   },
   "Map": {
     "GeneratedTypeName": "ballerina.Map",

@@ -453,7 +453,7 @@ module Renderers =
         let! config = state.GetContext()
         let! s = json |> JsonValue.AsString |> state.OfSum
 
-        if config.Table.SupportedRenderers |> Set.contains s then
+        if config.Many.SupportedRenderers |> Set.contains s then
 
           return!
             state {

@@ -9,7 +9,7 @@ type GolangOneGETMANYUNLINKEDers =
   { FunctionName: string
     OneNotFoundErrorConstructor: string
     Tuple2Type: string
-    TableType: string
+    ManyType: string
     Ones:
       List<
         {| OneName: string
@@ -29,14 +29,14 @@ type GolangOneGETMANYUNLINKEDers =
               seq {
                 yield
                   StringBuilder.One(
-                    $"  get{t.OneLookupType}__{t.OneName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.OneLookupType}, {ones.TableType}[{t.OneType}]],error), "
+                    $"  get{t.OneLookupType}__{t.OneName} func (Id, SearchParams) ({ones.Tuple2Type}[{t.OneLookupType}, {ones.ManyType}[{t.OneType}]],error), "
                   )
 
                 yield StringBuilder.One "\n"
 
                 yield
                   StringBuilder.One(
-                    $"  serialize{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, {ones.TableType}[{t.OneType}]]) (Result,error), "
+                    $"  serialize{t.OneLookupType}__{t.OneName} func ({ones.Tuple2Type}[{t.OneLookupType}, {ones.ManyType}[{t.OneType}]]) (Result,error), "
                   )
 
                 yield StringBuilder.One "\n"

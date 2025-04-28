@@ -352,7 +352,7 @@
             "label": "Team"
           },
           "UserGroups": {
-            "renderer": "table",
+            "renderer": "many",
             "detailsRenderer": {
               "renderer": {
                 "type": "UserGroup",

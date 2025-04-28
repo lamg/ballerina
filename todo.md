@@ -96,10 +96,14 @@
       ✅ validation and predicate validation are broken, just recurse properly in both details and preview (if available)
       ✅ validation
         ✅ always require `Id`
-    ❌ define a proper `One` and `DeltaOne` with methods `Create, Delete, Link, Unlink` as well
-      ❌ use it in the sample go-config
-    ❌ define a proper `DeltaMany` with methods `Create, Delete, Link, Unlink` as well
-      ❌ use it in the sample go-config
+    ✅ define a proper `One` and `DeltaOne` with methods `Create, Delete, Link, Unlink` as well
+      ✅ use it in the ONE PATCH
+      ✅ use it in the sample go-config
+      ✅ make sure it's used as codegen target
+    ✅ define a proper `Many` and  `DeltaMany` with methods `Create, Delete, Link, Unlink` as well
+      ✅ use it instead of `Table`
+      ✅ use it in the MANYPATCH
+      ✅ use it in the sample go-config
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
     ✅ parse nested forms at the renderer level
