@@ -614,13 +614,6 @@ export const PredicateValue = {
         }
         return PredicateValue.Operations.parse(json, subType, types);
       }
-      if (type.kind == "unionCase") {
-        return PredicateValue.Operations.ParseAsUnionCase({
-          kind: "unionCase",
-          caseName: json,
-          value: { kind: "form", value: Map() },
-        });
-      }
       if (type.kind == "union") {
         const unionCase = type.args.get(json);
         if (unionCase == undefined) {
@@ -628,7 +621,11 @@ export const PredicateValue = {
             `Error: cannot find union case ${JSON.stringify(json)} in types`,
           );
         }
-        return PredicateValue.Operations.parse(json, unionCase, types);
+        return PredicateValue.Operations.ParseAsUnionCase({
+          kind: "unionCase",
+          caseName: json,
+          value: { kind: "form", value: Map() },
+        });
       }
       if (type.kind == "application" && type.value == "List") {
         return ValueOrErrors.Operations.All(

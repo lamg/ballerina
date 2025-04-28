@@ -214,7 +214,6 @@ export type ParsedTableType = {
 };
 
 export type ParsedType<T> =
-  | ParsedUnionCase<T>
   | ParsedOptionType<T>
   | ParsedRecordType<T>
   | ParsedPrimitiveType<T>
@@ -268,21 +267,15 @@ export const ParsedType = {
             : fst.kind == "application" && snd.kind == "application"
               ? fst.value == snd.value &&
                 fst.args.length == snd.args.length &&
-                fst.args.every((v, i) =>
-                  ParsedType.Operations.Equals(v, snd.args[i]),
-                )
+                fst.args.every((v, i) => ParsedType.Operations.Equals(v, snd.args[i]))
               : fst.kind == "option" && snd.kind == "option"
                 ? fst.value.kind == "option" &&
                   snd.value.kind == "option" &&
                   ParsedType.Operations.Equals(fst.value.value, snd.value.value)
                 : fst.kind == "union" && snd.kind == "union"
                   ? fst.args.size == snd.args.size &&
-                    fst.args.every((v, i) =>
-                      ParsedType.Operations.Equals(v, snd.args.get(i)!),
-                    )
-                  : fst.kind == "unionCase" && snd.kind == "unionCase"
-                    ? fst.name == snd.name
-                    : false,
+                    fst.args.every((v, i) => v.name == snd.args.get(i)!.name)
+                  : false,
     ParseRawKeyOf: <T>(
       fieldName: TypeName,
       rawFieldType: RawFieldType<T>,
@@ -467,20 +460,6 @@ export const ParsedType = {
             ),
           );
       }
-      if (RawFieldType.isUnionCase(rawFieldType)) {
-        return ParsedType.Operations.ParseRawFieldType(
-          rawFieldType.caseName,
-          typeof rawFieldType.fields == "string"
-            ? rawFieldType.fields
-            : { fields: rawFieldType.fields ?? {} },
-          types,
-          injectedPrimitives,
-        ).Then((parsedFields) =>
-          ValueOrErrors.Default.return(
-            ParsedType.Default.unionCase(rawFieldType.caseName, parsedFields),
-          ),
-        );
-      }
       if (RawFieldType.isUnion(rawFieldType)) {
         return ValueOrErrors.Operations.All(
           List<ValueOrErrors<ParsedUnionCase<T>, string>>(
@@ -494,7 +473,9 @@ export const ParsedType = {
               }
               return ParsedType.Operations.ParseRawFieldType(
                 unionCase.caseName,
-                unionCase,
+                typeof unionCase.fields == "string"
+                  ? unionCase.fields
+                  : { fields: unionCase.fields ?? {} },
                 types,
                 injectedPrimitives,
               ).Then((parsedFields) =>
