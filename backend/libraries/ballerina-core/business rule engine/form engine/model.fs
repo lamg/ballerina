@@ -23,6 +23,7 @@ module Model =
       Sum: CodegenConfigSumDef
       Tuple: List<TupleCodegenConfigTypeDef>
       Union: CodegenConfigUnionDef
+      Record: CodegenConfigRecordDef
       Custom: Map<string, CodegenConfigCustomDef>
       Generic: List<GenericTypeDef>
       IdentifierAllowedRegex: string
@@ -154,6 +155,9 @@ module Model =
       SupportedRenderers:
         {| Enum: Set<string>
            Stream: Set<string> |} }
+
+  and CodegenConfigRecordDef =
+    { SupportedRenderers: Map<string, Set<string>> }
 
   type CrudMethod =
     | Create
@@ -299,7 +303,8 @@ module Model =
 
   and FormBody =
     | Record of
-      {| Fields: FormFields
+      {| Renderer: Option<string>
+         Fields: FormFields
          RecordType: ExprType |}
     | Union of
       {| Renderer: Renderer

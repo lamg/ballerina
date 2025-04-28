@@ -1046,9 +1046,21 @@ module Renderers =
           let! formFields = FormFields.Parse fields
           let! t = state.TryFindType formTypeId.TypeName
 
+          let! rendererJson =
+            fields
+            |> state.TryFindField "renderer"
+            |> state.Catch
+            |> state.Map(Sum.toOption)
+
+          let! renderer =
+            rendererJson
+            |> Option.map (JsonValue.AsString >> state.OfSum)
+            |> state.RunOption
+
           return
             FormBody.Record
-              {| Fields = formFields
+              {| Renderer = renderer
+                 Fields = formFields
                  RecordType = t.Type |}
         })
       |> state.MapError(Errors.HighestPriority)

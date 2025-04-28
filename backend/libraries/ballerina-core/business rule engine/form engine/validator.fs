@@ -527,6 +527,27 @@ module Validator =
               Errors.Singleton $"Error: the form type is a union, expected cases in the body but found fields instead."
             )
         | _, FormBody.Record fields ->
+          match fields.Renderer with
+          | Some renderer ->
+            let! rendererFields =
+              codegen.Record.SupportedRenderers
+              |> Map.tryFindWithError renderer "record renderer" renderer
+
+            if rendererFields |> Set.isEmpty |> not then
+              let renderedFields = fields.Fields.Fields |> Map.keys |> Set.ofSeq
+
+              if renderedFields <> rendererFields then
+                return!
+                  sum.Throw(
+                    Errors.Singleton
+                      $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
+                  )
+              else
+                return ()
+            else
+              return ()
+          | _ -> return ()
+
           do! FormFields.Validate codegen ctx localType fields.Fields
           return localType
         | _, FormBody.Table table ->
@@ -929,6 +950,22 @@ module Validator =
       (lookupApi: LookupApi)
       : Sum<Unit, Errors> =
       sum {
+        let! lookupType = ctx.TryFindType lookupApi.EntityName
+        let! fields = lookupType.Type |> ExprType.AsRecord
+
+        let! idField =
+          sum.Any2(fields |> Map.tryFindWithError "id" "key" "id", fields |> Map.tryFindWithError "Id" "key" "Id")
+
+        match idField with
+        | ExprType.PrimitiveType(PrimitiveType.GuidType)
+        | ExprType.PrimitiveType(PrimitiveType.StringType) -> return ()
+        | _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton
+                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'string' or 'guid', but it has one of type '{idField}'."
+            )
+
         do!
           lookupApi.Streams
           |> Map.values

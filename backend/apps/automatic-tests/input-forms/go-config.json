@@ -206,6 +206,12 @@
       "defaultUnionRenderer", "union"
     ]
   },
+  "Record": {
+    "SupportedRenderers": {
+      "alternatingBackgroundColors":[],
+      "nameAndDescription":["Name", "Description"]
+    }
+  },
   "Custom": {
     "InjectedType": {
       "GeneratedTypeName": "ballerina.Unit",

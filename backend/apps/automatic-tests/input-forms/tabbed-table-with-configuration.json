@@ -184,6 +184,7 @@
     "team": {
       "type": "Team",
       "containerRenderer": "grayBackground",
+      "renderer":"nameAndDescription",
       "fields": {
         "Name": {
           "renderer": "string",
@@ -269,6 +270,7 @@
               "detailsRenderer": {
                 "renderer": {
                   "type": "Job",
+                  "renderer":"alternatingBackgroundColors",
                   "fields": {
                     "Name": {
                       "renderer": "string",
