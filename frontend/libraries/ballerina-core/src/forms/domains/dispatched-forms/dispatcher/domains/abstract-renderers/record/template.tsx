@@ -10,6 +10,7 @@ import {
   MapRepo,
   PredicateFormLayout,
   PredicateValue,
+  RecordType,
   Updater,
   Value,
   ValueOrErrors,
