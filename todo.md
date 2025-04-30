@@ -106,9 +106,9 @@
       ✅ use it in the sample go-config
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
-    ❌ parse records - add renderer to the go config which must map the name of the renderer to the array of the fields that the renderer processes
-      ❌ renderer is optional
-    ❌ make sure that wheneer a type is used for a lookup, that the root type has an id
+    ✅ parse records - add renderer to the go config which must map the name of the renderer to the array of the fields that the renderer processes
+      ✅ renderer is optional
+    ✅ make sure that whenever a type is used for a lookup, that the root type has an id
     ✅ parse nested forms at the renderer level
       ✅ parse lookup APIs in streams
       ✅ remove the inline union renderer parser
