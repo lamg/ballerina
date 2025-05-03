@@ -4,10 +4,12 @@ import { TupleAbstractRendererState, TupleAbstractRendererView } from "./state";
 import {
   BasicUpdater,
   Bindings,
+  DispatchCommonFormState,
   DispatchDelta,
   FormLabel,
   MapRepo,
   PredicateValue,
+  replaceWith,
   Template,
   Updater,
   Value,
@@ -17,17 +19,15 @@ import { DispatchOnChange } from "../../../state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const DispatchTupleAbstractRenderer = <
-  ItemFormStates extends Map<
-    number,
-    { commonFormState: { modifiedByUser: boolean } }
-  >,
+  ItemFormState extends { commonFormState: DispatchCommonFormState },
   Context extends FormLabel & {
     disabled: boolean;
     type: DispatchParsedType<any>;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
-  ItemFormStates: Map<number, () => any>,
+  ItemFormStates: Map<number, () => ItemFormState>,
   itemTemplates: Map<
     number,
     Template<
@@ -35,6 +35,7 @@ export const DispatchTupleAbstractRenderer = <
         commonFormState: { modifiedByUser: boolean };
         type: DispatchParsedType<any>;
         bindings: Bindings;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
       any,
       {
@@ -50,27 +51,39 @@ export const DispatchTupleAbstractRenderer = <
         (
           _: Context &
             Value<ValueTuple> &
-            TupleAbstractRendererState & {
+            TupleAbstractRendererState<ItemFormState> & {
               bindings: Bindings;
               extraContext: any;
+              identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<PredicateValue> & {
           commonFormState: { modifiedByUser: boolean };
           type: DispatchParsedType<any>;
           bindings: Bindings;
+          identifiers: { withLauncher: string; withoutLauncher: string };
         } => ({
           ...(_.itemFormStates.get(itemIndex) ||
             ItemFormStates.get(itemIndex)!()),
-          value: _.value.values.get(itemIndex),
+          value: _.value.values.get(itemIndex)!,
           disabled: _.disabled,
           type: _.type,
           bindings: _.bindings,
           extraContext: _.extraContext,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(
+              `[${itemIndex + 1}]`,
+            ),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${itemIndex + 1}]`,
+            ),
+          },
         }),
       )
       .mapState(
-        (_: BasicUpdater<any>): Updater<TupleAbstractRendererState> =>
-          TupleAbstractRendererState().Updaters.Template.upsertItemFormState(
+        (
+          _: BasicUpdater<ItemFormState>,
+        ): Updater<TupleAbstractRendererState<ItemFormState>> =>
+          TupleAbstractRendererState<ItemFormState>().Updaters.Template.upsertItemFormState(
             itemIndex,
             ItemFormStates.get(itemIndex)!,
             _,
@@ -106,36 +119,64 @@ export const DispatchTupleAbstractRenderer = <
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              itemFormStates: MapRepo.Updaters.upsert(
-                itemIndex,
-                ItemFormStates.get(itemIndex)!,
-                (__: any) => ({
-                  ...__,
-                  ...__.commonFormState,
-                  modifiedByUser: true,
-                }),
-              )(_.itemFormStates) as unknown as ItemFormStates,
-            }));
+
+            props.setState(
+              TupleAbstractRendererState<ItemFormState>()
+                .Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+                .then(
+                  TupleAbstractRendererState<ItemFormState>().Updaters.Template.upsertItemFormState(
+                    itemIndex,
+                    ItemFormStates.get(itemIndex)!,
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+            );
           },
         }),
       );
 
   return Template.Default<
-    Context & Value<ValueTuple> & { disabled: boolean },
-    TupleAbstractRendererState,
+    Context &
+      Value<ValueTuple> & {
+        disabled: boolean;
+        identifiers: { withLauncher: string; withoutLauncher: string };
+      },
+    TupleAbstractRendererState<ItemFormState>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueTuple>;
     },
-    TupleAbstractRendererView<Context, ForeignMutationsExpected>
+    TupleAbstractRendererView<ItemFormState, Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+      console.error(
+        `Tuple expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering tuple field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
+          value expected for tuple but got something else
+        </p>
+      );
+    }
+
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
@@ -146,7 +187,7 @@ export const DispatchTupleAbstractRenderer = <
           }}
           embeddedItemTemplates={embeddedItemTemplates}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

@@ -1,11 +1,12 @@
-import React from "react";
 import {
-  BasicUpdater,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
   CommonFormState,
+  DispatchCommonFormState,
   DispatchDelta,
   PredicateValue,
+  replaceWith,
   Sum,
-  Updater,
   Value,
   ValueSum,
 } from "../../../../../../../../main";
@@ -13,15 +14,15 @@ import { Template } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DispatchOnChange } from "../../../state";
-import { SumAbstractRendererState, SumAbstractRendererView } from "./state";
+import {
+  SumAbstractRendererReadonlyContext,
+  SumAbstractRendererState,
+  SumAbstractRendererView,
+} from "./state";
 
 export const SumAbstractRenderer = <
-  LeftFormState extends { commonFormState: CommonFormState },
-  RightFormState extends { commonFormState: CommonFormState },
-  Context extends FormLabel & {
-    disabled: boolean;
-    type: DispatchParsedType<any>;
-  },
+  LeftFormState extends CommonAbstractRendererState,
+  RightFormState extends CommonAbstractRendererState,
   ForeignMutationsExpected,
 >(
   leftTemplate?: Template<
@@ -42,24 +43,27 @@ export const SumAbstractRenderer = <
   >,
 ) => {
   const embeddedLeftTemplate = leftTemplate
-    ?.mapContext((_: any): any => ({
-      ..._.customFormState.left,
-      disabled: _.disabled,
-      value: _.value.value.value,
-      bindings: _.bindings,
-      extraContext: _.extraContext,
-    }))
-    ?.mapState(
+    ?.mapContext(
       (
-        upd: BasicUpdater<LeftFormState>,
-      ): Updater<SumAbstractRendererState<LeftFormState, RightFormState>> =>
-        SumAbstractRendererState<
-          LeftFormState,
-          RightFormState
-        >().Updaters.Core.customFormState((_) => ({
-          ..._,
-          left: upd(_.left),
-        })),
+        _: SumAbstractRendererReadonlyContext &
+          SumAbstractRendererState<LeftFormState, RightFormState>,
+      ): Value<PredicateValue> &
+        CommonAbstractRendererReadonlyContext &
+        LeftFormState => ({
+        ..._.customFormState.left,
+        disabled: _.disabled,
+        value: _.value.value.value,
+        bindings: _.bindings,
+        extraContext: _.extraContext,
+        identifiers: {
+          withLauncher: _.identifiers.withLauncher.concat(`[left]`),
+          withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
+        },
+      }),
+    )
+    ?.mapState(
+      SumAbstractRendererState<LeftFormState, RightFormState>().Updaters.Core
+        .customFormState.children.left,
     )
     .mapForeignMutationsFromProps<
       ForeignMutationsExpected & {
@@ -85,23 +89,26 @@ export const SumAbstractRenderer = <
             }),
             delta,
           );
-          props.setState((_) => ({
-            ..._,
-            commonFormState: {
-              ..._.commonFormState,
-              modifiedByUser: true,
-            },
-            customFormState: {
-              ..._.customFormState,
-              left: {
-                ..._.customFormState.left,
-                commonFormState: {
-                  ..._.customFormState.left.commonFormState,
-                  modifiedByUser: true,
-                },
-              },
-            },
-          }));
+          props.setState(
+            SumAbstractRendererState<LeftFormState, RightFormState>()
+              .Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              )
+              .then(
+                SumAbstractRendererState<
+                  LeftFormState,
+                  RightFormState
+                >().Updaters.Core.customFormState.children.left((_) => ({
+                  ..._,
+                  commonFormState:
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    )(_.commonFormState),
+                })),
+              ),
+          );
         },
       }),
     );
@@ -113,18 +120,14 @@ export const SumAbstractRenderer = <
       value: _.value.value.value,
       bindings: _.bindings,
       extraContext: _.extraContext,
+      identifiers: {
+        withLauncher: _.identifiers.withLauncher.concat(`[right]`),
+        withoutLauncher: _.identifiers.withoutLauncher.concat(`[right]`),
+      },
     }))
     .mapState(
-      (
-        upd: BasicUpdater<RightFormState>,
-      ): Updater<SumAbstractRendererState<LeftFormState, RightFormState>> =>
-        SumAbstractRendererState<
-          LeftFormState,
-          RightFormState
-        >().Updaters.Core.customFormState((_) => ({
-          ..._,
-          right: upd(_.right),
-        })),
+      SumAbstractRendererState<LeftFormState, RightFormState>().Updaters.Core
+        .customFormState.children.right,
     )
     .mapForeignMutationsFromProps<
       ForeignMutationsExpected & {
@@ -151,29 +154,32 @@ export const SumAbstractRenderer = <
             }),
             delta,
           );
-          props.setState((_) => ({
-            ..._,
-            commonFormState: {
-              ..._.commonFormState,
-              modifiedByUser: true,
-            },
-            customFormState: {
-              ..._.customFormState,
-              right: {
-                ..._.customFormState.right,
-                commonFormState: {
-                  ..._.customFormState.right.commonFormState,
-                  modifiedByUser: true,
-                },
-              },
-            },
-          }));
+          props.setState(
+            SumAbstractRendererState<LeftFormState, RightFormState>()
+              .Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              )
+              .then(
+                SumAbstractRendererState<
+                  LeftFormState,
+                  RightFormState
+                >().Updaters.Core.customFormState.children.right((_) => ({
+                  ..._,
+                  commonFormState:
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    )(_.commonFormState),
+                })),
+              ),
+          );
         },
       }),
     );
 
   return Template.Default<
-    Context & Value<ValueSum> & { disabled: boolean; extraContext: any },
+    SumAbstractRendererReadonlyContext,
     SumAbstractRendererState<LeftFormState, RightFormState>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueSum>;
@@ -181,22 +187,48 @@ export const SumAbstractRenderer = <
     SumAbstractRendererView<
       LeftFormState,
       RightFormState,
-      Context,
+      SumAbstractRendererReadonlyContext,
       ForeignMutationsExpected
     >
   >((props) => {
+    if (!PredicateValue.Operations.IsSum(props.context.value)) {
+      console.error(
+        `Sum expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering sum field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Sum
+          value expected for sum but got something else
+        </p>
+      );
+    }
+
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{ ...props.context }}
           foreignMutations={{
             ...props.foreignMutations,
           }}
-          embeddedLeftTemplate={embeddedLeftTemplate}
-          embeddedRightTemplate={embeddedRightTemplate}
+          embeddedLeftTemplate={
+            props.context.value.value.kind == "l"
+              ? embeddedLeftTemplate
+              : undefined
+          }
+          embeddedRightTemplate={
+            props.context.value.value.kind == "r"
+              ? embeddedRightTemplate
+              : undefined
+          }
         />
-      </>
+      </span>
     );
   }).any([]);
 };

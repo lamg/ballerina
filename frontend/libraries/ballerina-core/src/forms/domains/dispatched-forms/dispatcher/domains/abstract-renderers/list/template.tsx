@@ -1,10 +1,12 @@
 import {
   BasicUpdater,
   Bindings,
+  DispatchCommonFormState,
   DispatchDelta,
   ListRepo,
   MapRepo,
   PredicateValue,
+  replaceWith,
   Updater,
   ValueTuple,
 } from "../../../../../../../../main";
@@ -22,6 +24,7 @@ export const ListAbstractRenderer = <
   Context extends FormLabel & {
     type: DispatchParsedType<any>;
     disabled: boolean;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
@@ -46,6 +49,7 @@ export const ListAbstractRenderer = <
             ListAbstractRendererState & {
               bindings: Bindings;
               extraContext: any;
+              identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<ValueTuple> & any => ({
           disabled: _.disabled,
@@ -54,6 +58,14 @@ export const ListAbstractRenderer = <
             GetDefaultElementState()),
           bindings: _.bindings,
           extraContext: _.extraContext,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(
+              `[${elementIndex}]`,
+            ),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${elementIndex}]`,
+            ),
+          },
         }),
       )
       .mapState(
@@ -95,24 +107,27 @@ export const ListAbstractRenderer = <
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              elementFormStates: MapRepo.Updaters.upsert(
-                elementIndex,
-                () => GetDefaultElementState(),
-                (__) => ({
-                  ...__,
-                  commonFormState: {
-                    ...__.commonFormState,
-                    modifiedByUser: true,
-                  },
-                }),
-              )(_.elementFormStates),
-            }));
+            props.setState(
+              ListAbstractRendererState.Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ).then(
+                ListAbstractRendererState.Updaters.Core.elementFormStates(
+                  MapRepo.Updaters.upsert(
+                    elementIndex,
+                    () => GetDefaultElementState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+              ),
+            );
           },
         }),
       );
@@ -125,8 +140,25 @@ export const ListAbstractRenderer = <
     },
     ListAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+      console.error(
+        `Tuple value expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering list field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
+          value expected for list but got something else
+        </p>
+      );
+    }
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
@@ -154,6 +186,13 @@ export const ListAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
             remove: (_) => {
               const delta: DispatchDelta = {
@@ -167,6 +206,13 @@ export const ListAbstractRenderer = <
                   ),
                 ),
                 delta,
+              );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
               );
             },
             move: (index, to) => {
@@ -186,6 +232,13 @@ export const ListAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
             duplicate: (_) => {
               const delta: DispatchDelta = {
@@ -199,6 +252,13 @@ export const ListAbstractRenderer = <
                   ),
                 ),
                 delta,
+              );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
               );
             },
             insert: (_) => {
@@ -219,11 +279,18 @@ export const ListAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
           }}
           embeddedElementTemplate={embeddedElementTemplate}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

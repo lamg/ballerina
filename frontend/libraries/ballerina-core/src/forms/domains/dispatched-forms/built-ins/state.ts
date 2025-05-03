@@ -21,6 +21,7 @@ import {
   AbstractTableRendererState,
   MapRepo,
   ValueTable,
+  DispatchCommonFormState,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -95,15 +96,6 @@ type BuiltInApiConverters = {
   Sum: ApiConverter<Sum<any, any>>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
-};
-
-export type DispatchCommonFormState = {
-  modifiedByUser: boolean;
-};
-export const DispatchCommonFormState = {
-  Default: (): DispatchCommonFormState => ({
-    modifiedByUser: false,
-  }),
 };
 
 export type ConcreteRendererKinds = {
@@ -226,11 +218,13 @@ export const dispatchDefaultState =
                         : injectedPrimitives?.injectedPrimitives.get(
                               t.name as keyof T,
                             ) != undefined
-                          ? ValueOrErrors.Default.return(
-                              injectedPrimitives.injectedPrimitives.get(
+                          ? ValueOrErrors.Default.return({
+                              commonFormState:
+                                DispatchCommonFormState.Default(),
+                              ...injectedPrimitives.injectedPrimitives.get(
                                 t.name as keyof T,
                               )!.defaultState,
-                            )
+                            })
                           : ValueOrErrors.Default.throwOne(
                               `could not resolve defaultState for primitive renderer kind "${
                                 t.name as string
@@ -288,7 +282,12 @@ export const dispatchDefaultState =
       if (t.kind == "tuple")
         return renderer.kind == "baseTupleRenderer"
           ? ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[number, any], string>>(
+              List<
+                ValueOrErrors<
+                  [number, { commonFormState: DispatchCommonFormState }],
+                  string
+                >
+              >(
                 t.args.map((_, index) =>
                   dispatchDefaultState(
                     infiniteStreamSources,
@@ -302,9 +301,9 @@ export const dispatchDefaultState =
               ),
             ).Then((itemStates) =>
               ValueOrErrors.Default.return(
-                TupleAbstractRendererState<Map<number, any>>().Default(
-                  Map(itemStates),
-                ),
+                TupleAbstractRendererState<{
+                  commonFormState: DispatchCommonFormState;
+                }>().Default(Map(itemStates)),
               ),
             )
           : ValueOrErrors.Default.throwOne(
@@ -1051,7 +1050,7 @@ export const dispatchToAPIRawValue =
       if (t.kind == "list") {
         if (!PredicateValue.Operations.IsTuple(raw)) {
           return ValueOrErrors.Default.throwOne(
-            `Tuple expected but got list of${JSON.stringify(raw)}`,
+            `Tuple expected but got list of ${JSON.stringify(raw)}`,
           );
         }
         return ValueOrErrors.Operations.All(
@@ -1062,7 +1061,7 @@ export const dispatchToAPIRawValue =
                 types,
                 converters,
                 injectedPrimitives,
-              )(value, formState.elementFormStates.get(index)),
+              )(value, formState?.elementFormStates?.get(index)),
             ),
           ),
         ).Then((values) =>
@@ -1083,7 +1082,7 @@ export const dispatchToAPIRawValue =
             injectedPrimitives,
           )(
             (keyValue as ValueTuple).values.get(0)!,
-            formState.elementFormStates.get(index).KeyFormState,
+            formState?.elementFormStates?.get(index)?.KeyFormState,
           )
             .Then((possiblyUndefinedKey) => {
               if (
@@ -1112,7 +1111,7 @@ export const dispatchToAPIRawValue =
                 injectedPrimitives,
               )(
                 (keyValue as ValueTuple).values.get(1)!,
-                formState.elementFormStates.get(index).ValueFormState,
+                formState?.elementFormStates?.get(index)?.ValueFormState,
               ).Then((value) =>
                 ValueOrErrors.Default.return([key, value] as [any, any]),
               ),
@@ -1129,7 +1128,10 @@ export const dispatchToAPIRawValue =
             );
           }
           return ValueOrErrors.Operations.Return(
-            converters["Map"].toAPIRawValue([values, formState.modifiedByUser]),
+            converters["Map"].toAPIRawValue([
+              values,
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
           );
         });
       }
@@ -1149,15 +1151,15 @@ export const dispatchToAPIRawValue =
         )(
           raw.value.value,
           raw.value.kind == "l"
-            ? formState.customFormState.left
-            : formState.customFormState.right,
+            ? formState?.commonFormState?.left
+            : formState?.commonFormState?.right,
         ).Then((value) =>
           ValueOrErrors.Default.return(
             converters["Sum"].toAPIRawValue([
               raw.value.kind == "l"
                 ? Sum.Default.left(value)
                 : Sum.Default.right(value),
-              formState.commonFormState.modifiedByUser,
+              formState?.commonFormState?.modifiedByUser ?? false,
             ]),
           ),
         );
@@ -1177,7 +1179,7 @@ export const dispatchToAPIRawValue =
                 types,
                 converters,
                 injectedPrimitives,
-              )(value, formState.itemFormStates.get(index));
+              )(value, formState?.itemFormStates?.get(index));
             }),
           ),
         ).Then((values) =>
@@ -1206,7 +1208,6 @@ export const dispatchToAPIRawValue =
         }
         const res = [] as any;
         t.fields.forEach((fieldType, fieldName) => {
-          // nullish coalescing operator on state used for extended type state, but this maybe should have its own kind
           const rawField = raw.fields.get(fieldName);
           if (rawField == undefined) {
             return;
@@ -1220,7 +1221,7 @@ export const dispatchToAPIRawValue =
               injectedPrimitives,
             )(
               raw.fields.get(fieldName)!,
-              formState?.fieldStates?.get(fieldName) ?? formState,
+              formState?.fieldStates?.get(fieldName),
             ),
           ]);
         });

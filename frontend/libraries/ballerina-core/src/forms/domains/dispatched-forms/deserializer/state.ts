@@ -6,14 +6,11 @@ import {
 } from "./domains/specification/domains/types/state";
 import { unit, Unit } from "../../../../fun/domains/unit/state";
 import {
-  PassthroughFormContext,
-  PassthroughFormState,
   PredicateValue,
   EnumReference,
   ValueOrErrors,
   InjectedPrimitives,
   BasicFun,
-  SearchableInfiniteStreamState,
   Guid,
   ApiErrors,
   Specification,
@@ -23,8 +20,7 @@ import {
   ValueInfiniteStreamState,
   MapRepo,
 } from "../../../../../main";
-import { RecordFormRenderer } from "./domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
-// import { UnionFormRenderer } from "./domains/specification/domains/form/domains/renderers/domains/unionFormRenderer/state";
+
 import { Form } from "./domains/specification/domains/form/state";
 import {
   DispatchApiConverters,
@@ -41,8 +37,8 @@ import { BaseRenderer } from "./domains/specification/domains/form/domains/rende
 
 export type DispatchParsedPassthroughLauncher<T> = {
   kind: "passthrough";
+  formName: string;
   renderer: Form<T>;
-  // | UnionFormRenderer<T>;
   parseEntityFromApi: (_: any) => ValueOrErrors<PredicateValue, string>;
   parseGlobalConfigurationFromApi: (
     _: any,
@@ -205,6 +201,7 @@ export const parseDispatchFormsToLaunchers =
                         apiConverters,
                         injectedPrimitives,
                       )(value, state),
+                    formName: launcher.form,
                   },
                 ]),
               ),

@@ -54,6 +54,11 @@ import {
   FormLayout,
   RecordAbstractRendererView,
   AbstractTableRendererView,
+  ValueOrErrors,
+  Template,
+  DispatchCommonFormState,
+  SumAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
@@ -66,7 +71,6 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
       (props) => {
-        console.debug("person record", props);
         return (
           <>
             <h1>Record!</h1>
@@ -185,40 +189,131 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
+        const DetailViewresult = props.context.customFormState.selectedDetailRow
+          ? props.DetailsRenderer(
+              props.context.customFormState.selectedDetailRow,
+              props.context.customFormState.stream,
+            )
+          : ValueOrErrors.Default.return(undefined);
+        const DetailView =
+          DetailViewresult.kind == "errors"
+            ? Template.Default<any, any, any, any>((props) => <div>Error</div>)
+            : DetailViewresult.value == undefined
+              ? Template.Default<any, any, any, any>((props) => <></>)
+              : DetailViewresult.value;
         return (
-          <>
-            <table>
-              <thead style={{ border: "1px solid black" }}>
-                <tr style={{ border: "1px solid black" }}>
-                  {props.TableHeaders.map((header: any) => (
-                    <th style={{ border: "1px solid black" }}>{header}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {props.EmbeddedTableData.entrySeq()
-                  .toArray()
-                  .map(([_, row]) => (
-                    <tr style={{ border: "1px solid black" }}>
-                      {row
-                        .valueSeq()
-                        .toArray()
-                        .map((Cell) => (
-                          <td style={{ border: "1px solid black" }}>
-                            {Cell({
-                              ...props,
-                              view: unit,
-                            })}
-                          </td>
-                        ))}
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            <button onClick={() => props.foreignMutations.loadMore()}>
-              Load More
-            </button>
-          </>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "10px",
+              minWidth: "100%",
+            }}
+          >
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
+              <table>
+                <thead style={{ border: "1px solid black" }}>
+                  <tr style={{ border: "1px solid black" }}>
+                    <th></th>
+                    <th>
+                      <input
+                        type="checkbox"
+                        checked={
+                          props.context.customFormState.selectedRows.size > 0
+                        }
+                        onClick={() =>
+                          props.context.customFormState.selectedRows.size > 0
+                            ? props.foreignMutations.clearRows()
+                            : props.foreignMutations.selectAllRows()
+                        }
+                      />
+                    </th>
+                    {props.TableHeaders.map((header: any) => (
+                      <th style={{ border: "1px solid black" }}>{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {props.EmbeddedTableData.entrySeq()
+                    .toArray()
+                    .map(([id, row]) => (
+                      <tr style={{ border: "1px solid black" }}>
+                        <button
+                          onClick={() =>
+                            props.context.customFormState.selectedDetailRow ==
+                            id
+                              ? props.foreignMutations.clearDetailView()
+                              : props.foreignMutations.selectDetailView(id)
+                          }
+                        >
+                          {props.context.customFormState.selectedDetailRow == id
+                            ? "🙉"
+                            : "🙈"}
+                        </button>
+                        <td style={{ border: "1px solid black" }}>
+                          <input
+                            type="checkbox"
+                            checked={props.context.customFormState.selectedRows.has(
+                              id,
+                            )}
+                            onClick={() => props.foreignMutations.selectRow(id)}
+                          />
+                        </td>
+                        {row
+                          .valueSeq()
+                          .toArray()
+                          .map((Cell) => (
+                            <td style={{ border: "1px solid black" }}>
+                              {Cell({
+                                ...props,
+                                view: unit,
+                              })}
+                            </td>
+                          ))}
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              <button onClick={() => props.foreignMutations.loadMore()}>
+                Load More
+              </button>
+            </div>
+
+            {props.context.customFormState.selectedDetailRow ? (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    minWidth: "300px",
+                    maxWidth: "300px",
+                    backgroundColor: "dimgray",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "10px",
+                  }}
+                >
+                  <h3>Detail View</h3>
+                  {DetailView({
+                    ...props,
+                    view: unit,
+                  })}
+                </div>
+              </>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  minWidth: "300px",
+                }}
+              />
+            )}
+          </div>
         );
       },
   },
@@ -896,9 +991,14 @@ export const PersonConcreteRenderers = {
   tuple: {
     defaultTuple2:
       <
+        ItemFormState extends { commonFormState: DispatchCommonFormState },
         Context extends FormLabel & { bindings: Bindings; extraContext: any },
         ForeignMutationsExpected,
-      >(): TupleAbstractRendererView<Context, ForeignMutationsExpected> =>
+      >(): TupleAbstractRendererView<
+        ItemFormState,
+        Context,
+        ForeignMutationsExpected
+      > =>
       (props) => (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -918,9 +1018,14 @@ export const PersonConcreteRenderers = {
       ),
     defaultTuple3:
       <
+        ItemFormState extends { commonFormState: DispatchCommonFormState },
         Context extends FormLabel & { bindings: Bindings; extraContext: any },
         ForeignMutationsExpected,
-      >(): TupleAbstractRendererView<Context, ForeignMutationsExpected> =>
+      >(): TupleAbstractRendererView<
+        ItemFormState,
+        Context,
+        ForeignMutationsExpected
+      > =>
       (props) => {
         return (
           <>
@@ -947,9 +1052,10 @@ export const PersonConcreteRenderers = {
   },
   sum: {
     defaultSum: <
-      LeftFormState,
-      RightFormState,
-      Context extends FormLabel & { bindings: Bindings; extraContext: any },
+      LeftFormState extends CommonAbstractRendererState,
+      RightFormState extends CommonAbstractRendererState,
+      Context extends SumAbstractRendererReadonlyContext &
+        SumAbstractRendererState<LeftFormState, RightFormState>,
       ForeignMutationsExpected,
     >(): SumAbstractRendererView<
       LeftFormState,
@@ -958,22 +1064,13 @@ export const PersonConcreteRenderers = {
       ForeignMutationsExpected
     > => {
       return (props) => {
-        if (
-          props.embeddedLeftTemplate == undefined ||
-          props.embeddedRightTemplate == undefined
-        ) {
-          console.error(
-            "embeddedLeftTemplate or embeddedRightTemplate is undefined, but both are expected in defaultSum",
-          );
-          return <></>;
-        }
         return (
           <>
-            {props.embeddedLeftTemplate({
+            {props?.embeddedLeftTemplate?.({
               ...props,
               view: unit,
             })}
-            {props.embeddedRightTemplate({
+            {props?.embeddedRightTemplate?.({
               ...props,
               view: unit,
             })}

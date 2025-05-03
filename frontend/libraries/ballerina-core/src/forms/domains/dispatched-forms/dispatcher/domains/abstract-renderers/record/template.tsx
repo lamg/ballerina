@@ -2,6 +2,7 @@ import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
   Bindings,
+  DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
   Expr,
@@ -10,6 +11,8 @@ import {
   MapRepo,
   PredicateFormLayout,
   PredicateValue,
+  RecordType,
+  replaceWith,
   Updater,
   Value,
   ValueOrErrors,
@@ -24,7 +27,9 @@ import {
 import { DispatchOnChange } from "../../../state";
 
 export const RecordAbstractRenderer = <
-  Context extends FormLabel & { bindings: Bindings },
+  Context extends FormLabel & { bindings: Bindings } & {
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
   ForeignMutationsExpected,
 >(
   FieldTemplates: Map<
@@ -46,6 +51,7 @@ export const RecordAbstractRenderer = <
       .mapContext(
         (
           _: Value<ValueRecord> & {
+            identifiers: { withLauncher: string; withoutLauncher: string };
             fieldStates: Map<string, any>;
             disabled: boolean;
             bindings: Bindings;
@@ -54,6 +60,12 @@ export const RecordAbstractRenderer = <
           },
         ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
           ..._,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${fieldName}]`,
+            ),
+          },
           value: _.value.fields.get(fieldName)!,
           type:
             _.type.kind === "record" ? _.type.fields.get(fieldName) : undefined,
@@ -101,24 +113,25 @@ export const RecordAbstractRenderer = <
               delta,
             );
 
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              fieldStates: MapRepo.Updaters.upsert(
-                fieldName,
-                () => FieldTemplates.get(fieldName)!.GetDefaultState(),
-                (__) => ({
-                  ...__,
-                  commonFormState: {
-                    ...__.commonFormState,
-                    modifiedByUser: true,
-                  },
-                }),
-              )(_.fieldStates),
-            }));
+            props.setState(
+              RecordAbstractRendererState.Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ).then(
+                RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+                  fieldName,
+                  FieldTemplates.get(fieldName)!.GetDefaultState,
+                  (_) => ({
+                    ..._,
+                    commonFormState:
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      )(_.commonFormState),
+                  }),
+                ),
+              ),
+            );
           },
         }),
       );
@@ -136,6 +149,22 @@ export const RecordAbstractRenderer = <
     },
     RecordAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsRecord(props.context.value)) {
+      console.error(
+        `Record expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering record field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Record value expected for record but got something else`
+        </p>
+      );
+    }
+
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,
@@ -208,7 +237,9 @@ export const RecordAbstractRenderer = <
     );
 
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           context={{
             ...props.context,
@@ -222,7 +253,7 @@ export const RecordAbstractRenderer = <
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

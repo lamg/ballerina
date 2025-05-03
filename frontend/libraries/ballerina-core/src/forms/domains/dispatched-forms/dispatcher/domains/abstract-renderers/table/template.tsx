@@ -12,6 +12,11 @@ import {
   ValueOrErrors,
   AbstractTableRendererReadonlyContext,
   replaceWith,
+  TableFormRenderer,
+  ValueRecord,
+  DispatchCommonFormState,
+  FormLabel,
+  Bindings,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -25,7 +30,13 @@ const EmbeddedValueInfiniteStreamTemplate =
     AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
   );
 
-export const TableAbstractRenderer = (
+export const TableAbstractRenderer = <
+  Context extends FormLabel & {
+    bindings: Bindings;
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
+  ForeignMutationsExpected,
+>(
   CellTemplates: Map<
     string,
     {
@@ -35,6 +46,7 @@ export const TableAbstractRenderer = (
       GetDefaultState: () => any;
     }
   >,
+  DetailsRenderer: Template<any, any, any, any> | undefined,
   Layout: PredicateVisibleColumns,
 ): Template<any, any, any, any> => {
   const embedCellTemplate =
@@ -46,13 +58,11 @@ export const TableAbstractRenderer = (
       cellTemplate
         // TODO, more helpful typing
         .mapContext<any>((_: any) => {
-          // can be passed in
           const rowState = (
             _.customFormState.stream.chunkStates.get(chunkIndex)
               ?.state as Record<string, any>
           )?.[rowId];
 
-          // can be passed in
           const cellState =
             rowState?.fields?.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
@@ -64,6 +74,14 @@ export const TableAbstractRenderer = (
             disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${rowId}][${column}]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${rowId}][${column}]`,
+              ),
+            },
           };
         })
         .mapState<AbstractTableRendererState>((_) =>
@@ -93,10 +111,10 @@ export const TableAbstractRenderer = (
                     CellTemplates.get(column)!.GetDefaultState,
                   )((__) => ({
                     ...__,
-                    commonFormState: {
-                      ...__.commonFormState,
-                      modifiedByUser: true,
-                    },
+                    commonFormState:
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      )(__.commonFormState),
                   })),
                 )
                 .then(
@@ -127,6 +145,88 @@ export const TableAbstractRenderer = (
           },
         }));
 
+  const embedDetailsRenderer = (
+    rowId: string,
+    stream: ValueInfiniteStreamState,
+  ): ValueOrErrors<Template<any, any, any, any> | undefined, string> =>
+    DetailsRenderer == undefined
+      ? ValueOrErrors.Default.return(undefined)
+      : ValueInfiniteStreamState.Operations.getChunkIndexForValue(
+          stream,
+          rowId,
+        ).Then((chunkIndex) =>
+          ValueOrErrors.Default.return(
+            DetailsRenderer.mapContext<any>((_: any) => {
+              const value = _.customFormState.stream.loadedElements
+                .get(chunkIndex)
+                ?.data.get(rowId);
+
+              const rowState = (
+                _.customFormState.stream.chunkStates.get(chunkIndex)
+                  ?.state as Record<string, any>
+              )?.[rowId];
+
+              return {
+                value,
+                commonFormState:
+                  rowState?.commonFormState ??
+                  DispatchCommonFormState.Default(),
+                customFormState: rowState?.customFormState,
+                disabled: false, // to do think about
+                bindings: _.bindings,
+                extraContext: _.extraContext,
+                identifiers: {
+                  withLauncher: _.identifiers.withLauncher.concat(
+                    `[${chunkIndex}][${rowId}][details]`,
+                  ),
+                  withoutLauncher: _.identifiers.withoutLauncher.concat(
+                    `[${chunkIndex}][${rowId}][details]`,
+                  ),
+                },
+              };
+            })
+              .mapState<AbstractTableRendererState>((_) =>
+                AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                  ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
+                    chunkIndex,
+                    rowId,
+                  )(_),
+                ),
+              )
+              .mapForeignMutationsFromProps<{
+                onChange: DispatchOnChange<PredicateValue>;
+              }>((props) => ({
+                onChange: (
+                  _: BasicUpdater<ValueRecord>,
+                  nestedDelta: DispatchDelta,
+                ) => {
+                  props.setState(
+                    AbstractTableRendererState.Updaters.Core.commonFormState.children
+                      .modifiedByUser(replaceWith(true))
+                      .then(
+                        AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                          ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
+                            chunkIndex,
+                            rowId,
+                          )(_),
+                        ),
+                      ),
+                  );
+
+                  // TODO, different delta for details
+                  const delta: DispatchDelta = {
+                    kind: "TableValue",
+                    id: rowId,
+                    nestedDelta: nestedDelta,
+                    tableType: props.context.type,
+                  };
+
+                  props.foreignMutations.onChange(id, delta);
+                },
+              })),
+          ),
+        );
+
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),
   );
@@ -137,6 +237,26 @@ export const TableAbstractRenderer = (
     any,
     any
   >((props) => {
+    if (!PredicateValue.Operations.IsTable(props.context.value)) {
+      console.error(
+        `Table expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering table field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context?.label && `${props.context?.label}: `}RENDER ERROR:
+          Table value expected for table but got something else
+        </p>
+      );
+    }
+
+    if (!props.context.customFormState.isInitialized) {
+      return <></>;
+    }
+
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,
@@ -150,7 +270,12 @@ export const TableAbstractRenderer = (
     // TODO -- set error template up top
     if (visibleColumns.kind == "errors") {
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
-      return <></>;
+      return (
+        <p>
+          {props.context?.label}: Error while computing visible columns, check
+          console
+        </p>
+      );
     }
 
     const disabledColumnKeys = ValueOrErrors.Operations.All(
@@ -174,16 +299,17 @@ export const TableAbstractRenderer = (
     // TODO -- set the top level state as error
     if (disabledColumnKeys.kind == "errors") {
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
-      return <></>;
+      return (
+        <p>
+          {props.context?.label}: Error while computing disabled column keys,
+          check console
+        </p>
+      );
     }
 
     const disabledColumnKeysSet = Set(
       disabledColumnKeys.value.filter((fieldName) => fieldName != null),
     );
-
-    if (!props.context.customFormState.isInitialized) {
-      return <></>;
-    }
 
     const tableData =
       props.context.customFormState.stream.loadedElements.flatMap(
@@ -193,17 +319,26 @@ export const TableAbstractRenderer = (
               .filter((_, column) =>
                 visibleColumns.value.columns.includes(column),
               )
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(chunkIndex)(rowId)(
+              .map((_, column) => {
+                const result = EmbeddedCellTemplates.get(column);
+                if (result == undefined) {
+                  console.error(
+                    "Visible column defined which is not in column renderers",
+                    column,
+                  );
+                  // TODO -- better error handling
+                }
+                return EmbeddedCellTemplates.get(column)!(chunkIndex)(rowId)(
                   rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column)),
-              ),
+                )(disabledColumnKeysSet.has(column));
+              }),
           ),
       );
 
-    console.log(props.context);
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
@@ -215,11 +350,42 @@ export const TableAbstractRenderer = (
               props.setState(
                 AbstractTableRendererState.Updaters.Template.loadMore(),
               ),
+            selectDetailView: (rowId: string | undefined) =>
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                  replaceWith<string | undefined>(rowId),
+                ),
+              ),
+            clearDetailView: () =>
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                  replaceWith<string | undefined>(undefined),
+                ),
+              ),
+            selectRow: (rowId: string) =>
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  (_) => (_.has(rowId) ? _.remove(rowId) : _.add(rowId)),
+                ),
+              ),
+            selectAllRows: () =>
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  replaceWith(Set(tableData.keySeq())),
+                ),
+              ),
+            clearRows: () =>
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  replaceWith(Set()),
+                ),
+              ),
           }}
           TableHeaders={visibleColumns.value.columns}
           EmbeddedTableData={tableData}
+          DetailsRenderer={embedDetailsRenderer}
         />
-      </>
+      </span>
     );
   }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
 };

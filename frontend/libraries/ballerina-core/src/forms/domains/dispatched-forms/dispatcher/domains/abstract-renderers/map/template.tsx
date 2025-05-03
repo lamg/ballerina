@@ -4,19 +4,16 @@ import { MapAbstractRendererState, MapAbstractRendererView } from "./state";
 import { Template } from "../../../../../../../template/state";
 import {
   PredicateValue,
-  Unit,
-  SimpleCallback,
   Value,
   ValueTuple,
   Updater,
   DispatchDelta,
   BasicUpdater,
-  MapRepo,
   ListRepo,
-  id,
   Bindings,
+  replaceWith,
+  DispatchCommonFormState,
 } from "../../../../../../../../main";
-import { DispatchCommonFormState } from "../../../../built-ins/state";
 import { FormLabel } from "../../../../../../../../main";
 import { DispatchOnChange } from "../../../state";
 import {
@@ -30,6 +27,7 @@ export const MapAbstractRenderer = <
   Context extends FormLabel & {
     type: DispatchParsedType<any>;
     disabled: boolean;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
@@ -71,6 +69,14 @@ export const MapAbstractRenderer = <
           disabled: _.disabled,
           bindings: _.bindings,
           extraContext: _.extraContext,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(
+              `[${elementIndex}][key]`,
+            ),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${elementIndex}][key]`,
+            ),
+          },
         }),
       )
       .mapState(
@@ -80,18 +86,11 @@ export const MapAbstractRenderer = <
           MapAbstractRendererState<
             KeyFormState,
             ValueFormState
-          >().Updaters.Core.elementFormStates(
-            MapRepo.Updaters.upsert(
-              elementIndex,
-              () => ({
-                KeyFormState: GetDefaultKeyFormState(),
-                ValueFormState: GetDefaultValueFormState(),
-              }),
-              (current) => ({
-                ...current,
-                KeyFormState: _(current.KeyFormState),
-              }),
-            ),
+          >().Updaters.Template.upsertElementKeyFormState(
+            elementIndex,
+            GetDefaultKeyFormState(),
+            GetDefaultValueFormState(),
+            _,
           ),
       )
       .mapForeignMutationsFromProps<
@@ -131,32 +130,31 @@ export const MapAbstractRenderer = <
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              elementFormStates: MapRepo.Updaters.upsert(
-                elementIndex,
-                () => ({
-                  KeyFormState: GetDefaultKeyFormState(),
-                  ValueFormState: GetDefaultValueFormState(),
-                }),
-                (__) => {
-                  return {
-                    ValueFormState: __.ValueFormState,
-                    KeyFormState: {
-                      ...__.KeyFormState,
-                      commonFormState: {
-                        ...__.KeyFormState.commonFormState,
-                        modifiedByUser: true,
-                      },
-                    },
-                  };
-                },
-              )(_.elementFormStates),
-            }));
+            props.setState(
+              MapAbstractRendererState<KeyFormState, ValueFormState>()
+                .Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+                .then(
+                  MapAbstractRendererState<
+                    KeyFormState,
+                    ValueFormState
+                  >().Updaters.Template.upsertElementKeyFormState(
+                    elementIndex,
+                    GetDefaultKeyFormState(),
+                    GetDefaultValueFormState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+            );
           },
         }),
       );
@@ -170,6 +168,7 @@ export const MapAbstractRenderer = <
             MapAbstractRendererState<KeyFormState, ValueFormState> & {
               bindings: Bindings;
               extraContext: any;
+              identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<PredicateValue> & ValueFormState & { bindings: Bindings } => {
           return {
@@ -182,6 +181,14 @@ export const MapAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${elementIndex}][value]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${elementIndex}][value]`,
+              ),
+            },
           };
         },
       )
@@ -192,18 +199,11 @@ export const MapAbstractRenderer = <
           MapAbstractRendererState<
             KeyFormState,
             ValueFormState
-          >().Updaters.Core.elementFormStates(
-            MapRepo.Updaters.upsert(
-              elementIndex,
-              () => ({
-                KeyFormState: GetDefaultKeyFormState(),
-                ValueFormState: GetDefaultValueFormState(),
-              }),
-              (current) => ({
-                ...current,
-                ValueFormState: _(current.ValueFormState),
-              }),
-            ),
+          >().Updaters.Template.upsertElementValueFormState(
+            elementIndex,
+            GetDefaultKeyFormState(),
+            GetDefaultValueFormState(),
+            _,
           ),
       )
       .mapForeignMutationsFromProps<
@@ -243,30 +243,31 @@ export const MapAbstractRenderer = <
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              elementFormStates: MapRepo.Updaters.upsert(
-                elementIndex,
-                () => ({
-                  KeyFormState: GetDefaultKeyFormState(),
-                  ValueFormState: GetDefaultValueFormState(),
-                }),
-                (__) => ({
-                  KeyFormState: __.KeyFormState,
-                  ValueFormState: {
-                    ...__.ValueFormState,
-                    commonFormState: {
-                      ...__.ValueFormState.commonFormState,
-                      modifiedByUser: true,
-                    },
-                  },
-                }),
-              )(_.elementFormStates),
-            }));
+            props.setState(
+              MapAbstractRendererState<KeyFormState, ValueFormState>()
+                .Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+                .then(
+                  MapAbstractRendererState<
+                    KeyFormState,
+                    ValueFormState
+                  >().Updaters.Template.upsertElementValueFormState(
+                    elementIndex,
+                    GetDefaultKeyFormState(),
+                    GetDefaultValueFormState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+            );
           },
         }),
       );
@@ -282,8 +283,25 @@ export const MapAbstractRenderer = <
       ForeignMutationsExpected
     >
   >((props) => {
+    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+      console.error(
+        `Tuple expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering map field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
+          value expected for map but got something else
+        </p>
+      );
+    }
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
@@ -318,6 +336,16 @@ export const MapAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                MapAbstractRendererState<
+                  KeyFormState,
+                  ValueFormState
+                >().Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
             remove: (_) => {
               const delta: DispatchDelta = {
@@ -334,12 +362,22 @@ export const MapAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                MapAbstractRendererState<
+                  KeyFormState,
+                  ValueFormState
+                >().Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
           }}
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </>
+      </span>
     );
   }).any([]);
 };
