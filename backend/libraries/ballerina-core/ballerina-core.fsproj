@@ -50,38 +50,6 @@
     <Compile Include="business rule engine/form engine/parser/renderers.fs" />
     <Compile Include="business rule engine/form engine/parser/runner.fs" />
     <Compile Include="business rule engine/form engine/validator.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/model.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/context.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/union.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/record.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/entity/entityGETters.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/entity/entityGETDEFAULTers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/entity/entityPOSTers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/entity/entityPATCHers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/table/tableGETters.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/table/tableDELETEers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/table/tablePOSTers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/table/tablePATCHers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/oneGETters.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/oneGETMANYUNLINKEDers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/one/onePATCHers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/many/manyGETMANYers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/many/manyGETMANYUNLINKEDers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/many/manyPATCHers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum/enumGETters.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum/enumPOSTers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamGETters.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamGETMANYers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/stream/streamPOSTers.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/ExprTypeToAnnotation.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/ExprTypeToWriter.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/ExprTypeDefaultValue.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/customTypes.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/generatedTypes.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/header.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/generator.fs" />
-    <Compile Include="business rule engine/form engine/runner.fs" />
   </ItemGroup>
 
   <ItemGroup>
