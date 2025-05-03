@@ -56,6 +56,9 @@ import {
   AbstractTableRendererView,
   ValueOrErrors,
   Template,
+  DispatchCommonFormState,
+  SumAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
@@ -68,7 +71,6 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
       (props) => {
-        console.debug("person record", props);
         return (
           <>
             <h1>Record!</h1>
@@ -989,9 +991,14 @@ export const PersonConcreteRenderers = {
   tuple: {
     defaultTuple2:
       <
+        ItemFormState extends { commonFormState: DispatchCommonFormState },
         Context extends FormLabel & { bindings: Bindings; extraContext: any },
         ForeignMutationsExpected,
-      >(): TupleAbstractRendererView<Context, ForeignMutationsExpected> =>
+      >(): TupleAbstractRendererView<
+        ItemFormState,
+        Context,
+        ForeignMutationsExpected
+      > =>
       (props) => (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1011,9 +1018,14 @@ export const PersonConcreteRenderers = {
       ),
     defaultTuple3:
       <
+        ItemFormState extends { commonFormState: DispatchCommonFormState },
         Context extends FormLabel & { bindings: Bindings; extraContext: any },
         ForeignMutationsExpected,
-      >(): TupleAbstractRendererView<Context, ForeignMutationsExpected> =>
+      >(): TupleAbstractRendererView<
+        ItemFormState,
+        Context,
+        ForeignMutationsExpected
+      > =>
       (props) => {
         return (
           <>
@@ -1040,9 +1052,10 @@ export const PersonConcreteRenderers = {
   },
   sum: {
     defaultSum: <
-      LeftFormState,
-      RightFormState,
-      Context extends FormLabel & { bindings: Bindings; extraContext: any },
+      LeftFormState extends CommonAbstractRendererState,
+      RightFormState extends CommonAbstractRendererState,
+      Context extends SumAbstractRendererReadonlyContext &
+        SumAbstractRendererState<LeftFormState, RightFormState>,
       ForeignMutationsExpected,
     >(): SumAbstractRendererView<
       LeftFormState,
@@ -1051,22 +1064,13 @@ export const PersonConcreteRenderers = {
       ForeignMutationsExpected
     > => {
       return (props) => {
-        if (
-          props.embeddedLeftTemplate == undefined ||
-          props.embeddedRightTemplate == undefined
-        ) {
-          console.error(
-            "embeddedLeftTemplate or embeddedRightTemplate is undefined, but both are expected in defaultSum",
-          );
-          return <></>;
-        }
         return (
           <>
-            {props.embeddedLeftTemplate({
+            {props?.embeddedLeftTemplate?.({
               ...props,
               view: unit,
             })}
-            {props.embeddedRightTemplate({
+            {props?.embeddedRightTemplate?.({
               ...props,
               view: unit,
             })}

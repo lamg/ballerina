@@ -240,16 +240,23 @@ export const DispatcherFormsApp = (props: {}) => {
       });
   }, [specificationDeserializer.deserializedSpecification.sync.kind]);
 
-  // console.debug("formParser", JSON.stringify(specificationDeserializer, null, 2));
-  // console.debug("personPassthroughFormState", JSON.stringify(personPassthroughFormState, null, 2));
-  // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
-  // console.debug("globalConfiguration", JSON.stringify(globalConfiguration, null, 2));
-
   console.debug(
-    "personConfigState",
-    JSON.stringify(personConfigState, null, 2),
+    "personPassthroughFormState",
+    JSON.stringify(
+      personPassthroughFormState?.formState?.fieldStates?.get("dependants"),
+      null,
+      2,
+    ),
   );
-  console.debug("personConfig", JSON.stringify(config, null, 2));
+  console.debug(
+    "personPassthroughFormState common",
+    JSON.stringify(
+      personPassthroughFormState?.formState?.commonFormState,
+      null,
+      2,
+    ),
+  );
+  // console.debug("personConfig", JSON.stringify(config, null, 2));
 
   if (
     specificationDeserializer.deserializedSpecification.sync.kind == "loaded" &&
