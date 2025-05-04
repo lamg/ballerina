@@ -80,7 +80,7 @@ type CoroutineBuilder() =
     Co(fun _ -> CoroutineResult.Return(result), None, None)
 
   member co.Yield() =
-    Co(fun _ -> CoroutineResult.Wait(TimeSpan.FromMilliseconds(0), co.Return()), None, None)
+    Co(fun _ -> CoroutineResult.Wait(TimeSpan.FromMilliseconds 0., co.Return()), None, None)
 
   member _.Bind(p: Coroutine<'a, 's, 'c, 'e>, k: 'a -> Coroutine<'b, 's, 'c, 'e>) = Coroutine.bind (p, k)
 
@@ -126,16 +126,16 @@ type CoroutineBuilder() =
     Co(fun _ -> CoroutineResult.Spawn(p), None, None)
 
   member _.Repeat(p: Coroutine<'a, 's, 'c, 'e>) : Coroutine<'a, 's, 'c, 'e> =
-    Co(fun (s, c, es, dt) -> CoroutineResult.Repeat(p), None, None)
+    Co(fun _ -> CoroutineResult.Repeat(p), None, None)
 
   member _.GetContext() =
-    Co(fun (s, c, es, dt) -> CoroutineResult.Return(c), None, None)
+    Co(fun (_, c, _, _) -> CoroutineResult.Return(c), None, None)
 
   member _.GetState() =
-    Co(fun (s, c, es, dt) -> CoroutineResult.Return(s), None, None)
+    Co(fun (s, _, _, _) -> CoroutineResult.Return(s), None, None)
 
   member _.SetState(u: U<'s>) =
-    Co(fun (s, c, es, dt) -> CoroutineResult.Return(), Some u, None)
+    Co(fun (_, _, _, _) -> CoroutineResult.Return(), Some u, None)
 
   [<CustomOperation("produce", MaintainsVariableSpaceUsingBind = true, AllowIntoPattern = true)>]
   member co.ProduceOp(p: Coroutine<'a, 's, 'c, 'e>, [<ProjectionParameter>] new_event) =
@@ -194,7 +194,7 @@ type Coroutine<'a, 's, 'c, 'e> with
     (ctx: 's * 'c * Map<Guid, 'e> * DeltaT)
     : EvaluatedCoroutine<'a, 's, 'c, 'e> =
     let co = CoroutineBuilder()
-    let (s, c, es, dt) = ctx
+    let (_, c, es, dt) = ctx
     let (step, u_s, u_e) = p ctx
 
     match step with
@@ -229,7 +229,7 @@ type Coroutine<'a, 's, 'c, 'e> with
         )
     | Combine(p, k) ->
       match Coroutine.eval p ctx with
-      | Done(p', u_s, u_e) ->
+      | Done(_, u_s, u_e) ->
         let res = Coroutine.eval k ctx
         res.After(u_s, u_e)
       | Spawned(p', u_s, u_e, rest) ->
@@ -287,7 +287,7 @@ type Coroutine<'a, 's, 'c, 'e> with
       | Choice1Of2(ps', spawned, u_s, u_e) -> Spawned(spawned, u_s, u_e, Some(co.Any ps'))
       | Choice2Of2(res, u_s, u_e) -> Done(res, u_s, u_e)
     | Wait(timeSpan, p': Coroutine<'a, 's, 'c, 'e>) ->
-      if timeSpan.TotalSeconds <= 0 then
+      if timeSpan.TotalSeconds <= 0. then
         Active(p', None, None)
       else
         Waiting(
@@ -309,7 +309,7 @@ type Coroutine<'a, 's, 'c, 'e> with
         es
         |> Seq.map (fun e -> p_e e.Value, e)
         |> Seq.tryFind (function
-          | Some _, e -> true
+          | Some _, _ -> true
           | _ -> false)
       with
       | Some(Some res, e) -> Done(res, None, Some(Map.remove e.Key))
