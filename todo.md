@@ -104,6 +104,7 @@
       ✅ use it instead of `Table`
       ✅ use it in the MANYPATCH
       ✅ use it in the sample go-config
+    ❌ add a `visibleCases` (optional) tab to the union renderers
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
     ✅ parse records - add renderer to the go config which must map the name of the renderer to the array of the fields that the renderer processes
