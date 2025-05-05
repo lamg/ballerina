@@ -89,10 +89,13 @@ export const BaseUnionRenderer = {
       }
       if (
         Object.values(serialized.cases).some(
-          (caseProp) => typeof caseProp != "object",
+          (caseProp) =>
+            typeof caseProp != "object" && typeof caseProp != "string",
         )
       ) {
-        return ValueOrErrors.Default.throwOne(`cases must be objects`);
+        return ValueOrErrors.Default.throwOne(
+          `cases must be objects or strings`,
+        );
       }
       const cases = serialized.cases as Record<string, SerializedBaseRenderer>;
 
@@ -140,8 +143,8 @@ export const BaseUnionRenderer = {
                       );
                     }
                     return BaseRenderer.Operations.DeserializeAs(
-                      caseType.fields,
-                      caseProp,
+                      caseType,
+                      { renderer: caseProp }, // TODO  -- fix in spec w/ backend
                       fieldViews,
                       "nested",
                       `case ${caseName}`,

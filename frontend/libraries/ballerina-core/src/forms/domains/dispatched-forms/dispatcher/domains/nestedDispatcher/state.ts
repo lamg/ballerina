@@ -13,6 +13,7 @@ import {
   SumType,
   TableType,
   TupleType,
+  UnionType,
 } from "../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../deserializer/state";
 import {
@@ -21,13 +22,13 @@ import {
   NestedMultiSelectionDispatcher,
   NestedSingleSelectionDispatcher,
   NestedTableDispatcher,
+  NestedUnionDispatcher,
   TableFormDispatcher,
   TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../main";
 import { BaseRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
 import { RecordFormRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
-import { BaseTableRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/table/state";
 import { FormDispatcher } from "../../state";
 
 export const NestedDispatcher = {
@@ -242,6 +243,18 @@ export const NestedDispatcher = {
               dispatcherContext,
             ),
           ),
+    DispatchAsUnionRenderer: <
+      T extends { [key in keyof T]: { type: any; state: any } },
+    >(
+      type: UnionType<T>,
+      renderer: BaseRenderer<T>,
+      dispatcherContext: DispatcherContext<T>,
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      renderer.kind != "baseUnionRenderer"
+        ? ValueOrErrors.Default.throwOne(
+            `expected renderer.kind == "baseUnionRenderer" but got ${renderer.kind}`,
+          )
+        : NestedUnionDispatcher.Dispatch(type, renderer, dispatcherContext),
     DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
       renderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
@@ -335,9 +348,15 @@ export const NestedDispatcher = {
                                 renderer,
                                 dispatcherContext,
                               )
-                            : ValueOrErrors.Default.throwOne(
-                                `unknown type kind "${type.kind}"`,
-                              );
+                            : type.kind == "union"
+                              ? NestedDispatcher.Operations.DispatchAsUnionRenderer(
+                                  type,
+                                  renderer,
+                                  dispatcherContext,
+                                )
+                              : ValueOrErrors.Default.throwOne(
+                                  `unknown type kind "${type.kind}"`,
+                                );
 
       return result.MapErrors((errors) =>
         errors.map(

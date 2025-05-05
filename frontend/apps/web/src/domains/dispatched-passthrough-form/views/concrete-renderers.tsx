@@ -59,11 +59,52 @@ import {
   DispatchCommonFormState,
   SumAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
+  UnionAbstractRendererView,
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
 
 export const PersonConcreteRenderers = {
+  union: {
+    person:
+      <
+        UnionAbstractRendererReadonlyContext,
+        ForeignMutationsExpected,
+      >(): UnionAbstractRendererView<
+        { commonFormState: DispatchCommonFormState },
+        ForeignMutationsExpected
+      > =>
+      (props) => {
+        return (
+          <>
+            {props.context.label && <h3>{props.context.label}</h3>}
+            {props.embeddedCaseTemplate(props.context.value.caseName)({
+              ...props,
+              view: unit,
+            })}
+          </>
+        );
+      },
+    job:
+      <
+        UnionAbstractRendererReadonlyContext,
+        ForeignMutationsExpected,
+      >(): UnionAbstractRendererView<
+        { commonFormState: DispatchCommonFormState },
+        ForeignMutationsExpected
+      > =>
+      (props) => {
+        return (
+          <>
+            {props.context.label && <h3>{props.context.label}</h3>}
+            {props.embeddedCaseTemplate(props.context.value.caseName)({
+              ...props,
+              view: unit,
+            })}
+          </>
+        );
+      },
+  },
   record: {
     person:
       <
@@ -73,7 +114,6 @@ export const PersonConcreteRenderers = {
       (props) => {
         return (
           <>
-            <h1>Record!</h1>
             <table>
               <tbody>
                 {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
@@ -118,7 +158,6 @@ export const PersonConcreteRenderers = {
       (props) => {
         return (
           <>
-            <h3>Address!</h3>
             <table>
               <tbody>
                 {props.context.layout.valueSeq().map((tab) =>

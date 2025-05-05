@@ -22,6 +22,8 @@ import {
   MapRepo,
   ValueTable,
   DispatchCommonFormState,
+  UnionAbstractRendererState,
+  TableFormRenderer,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -41,6 +43,7 @@ import { EnumAbstractRendererState } from "../dispatcher/domains/abstract-render
 import { ListAbstractRendererState } from "../dispatcher/domains/abstract-renderers/list/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Form } from "../deserializer/domains/specification/domains/form/state";
+import { RecordFormRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
 import { BaseRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
 
 const sortObjectKeys = (obj: Record<string, any>) =>
@@ -64,10 +67,9 @@ export type DispatchApiConverters<
   T extends { [key in keyof T]: { type: any; state: any } },
 > = { [key in keyof T]: ApiConverter<T[key]["type"]> } & BuiltInApiConverters;
 
-type UnionCase = {
-  caseName: string;
-  fields: Record<string, any>;
-};
+type RawUnion = {
+  [caseName: string]: Record<string, any>;
+} & { Discriminator: string };
 
 type Table = {
   data: Map<string, Record<string, any>>;
@@ -83,7 +85,7 @@ type BuiltInApiConverters = {
   base64File: ApiConverter<string>;
   secret: ApiConverter<string>;
   Date: ApiConverter<Date>;
-  union: ApiConverter<UnionCase>;
+  union: ApiConverter<RawUnion>;
   SingleSelection: ApiConverter<
     CollectionSelection<CollectionReference | EnumReference>
   >;
@@ -117,6 +119,7 @@ export type ConcreteRendererKinds = {
   sumUnitDate: Set<string>;
   record: Set<string>;
   table: Set<string>;
+  union: Set<string>;
 };
 
 export const concreteRendererToKind =
@@ -373,6 +376,42 @@ export const dispatchDefaultState =
               `received non record renderer kind "${renderer.kind}" when resolving defaultValue for record`,
             );
 
+      if (t.kind == "union") {
+        return renderer.kind == "baseUnionRenderer"
+          ? ValueOrErrors.Operations.All(
+              List<ValueOrErrors<[string, any], string>>(
+                renderer.cases
+                  .entrySeq()
+                  .map(([caseName, caseRenderer]) =>
+                    MapRepo.Operations.tryFindWithError(
+                      caseName,
+                      t.args,
+                      () =>
+                        `case ${caseName} not found in type ${JSON.stringify(
+                          t,
+                        )}`,
+                    ).Then((caseType) =>
+                      dispatchDefaultState(
+                        infiniteStreamSources,
+                        injectedPrimitives,
+                        types,
+                        forms,
+                      )(caseType, caseRenderer).Then((caseState) =>
+                        ValueOrErrors.Default.return([caseName, caseState]),
+                      ),
+                    ),
+                  ),
+              ),
+            ).Then((caseStates) =>
+              ValueOrErrors.Default.return(
+                UnionAbstractRendererState<any>().Default(Map(caseStates)),
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non union renderer kind "${renderer.kind}" when resolving defaultState for union`,
+            );
+      }
+
       if (t.kind == "table") {
         return renderer.kind == "tableForm" ||
           renderer.kind == "baseTableRenderer"
@@ -411,7 +450,7 @@ export const dispatchDefaultState =
       }
 
       return ValueOrErrors.Default.throwOne(
-        `type of kind "${t.kind}" not supported by defaultState`,
+        `type of kind "${JSON.stringify(t)}" not supported by defaultState`,
       );
     })();
     return result.MapErrors((errors) =>
@@ -579,6 +618,34 @@ export const dispatchDefaultValue =
               `received non record renderer kind "${renderer.kind}" when resolving defaultValue for record`,
             );
 
+      // TODO -- needs more thought
+      if (t.kind == "union") {
+        if (renderer.kind != "baseUnionRenderer") {
+          return ValueOrErrors.Default.throwOne(
+            `received non union renderer kind "${renderer.kind}" when resolving defaultValue for union`,
+          );
+        }
+
+        const firstCase = t.args.first();
+        if (firstCase == undefined) {
+          return ValueOrErrors.Default.throwOne(
+            `union type ${t.name} has no cases`,
+          );
+        }
+        const firstCaseRenderer = renderer.cases.first();
+        if (firstCaseRenderer == undefined) {
+          return ValueOrErrors.Default.throwOne(
+            `union renderer ${renderer.concreteRendererName} has no cases`,
+          );
+        }
+
+        return dispatchDefaultValue(
+          injectedPrimitives,
+          types,
+          forms,
+        )(firstCase, firstCaseRenderer);
+      }
+
       if (t.kind == "lookup") {
         if (renderer.kind != "baseLookupRenderer") {
           return ValueOrErrors.Default.throwOne(
@@ -646,33 +713,42 @@ export const dispatchFromAPIRawValue =
         );
       }
       if (t.kind == "union") {
-        const result = converters[t.kind].fromAPIRawValue(raw);
-        const caseType = t.args.get(result.caseName);
-
+        const result = converters["union"].fromAPIRawValue(raw);
+        const caseType = t.args.get(result.Discriminator);
         if (caseType == undefined)
           return ValueOrErrors.Default.throwOne(
-            `union case ${result.caseName} not found in type ${JSON.stringify(
-              t,
-            )}`,
+            `union case ${
+              result.Discriminator
+            } not found in type ${JSON.stringify(t)}`,
           );
 
-        const fieldsType = caseType.fields;
+        if (caseType.kind != "record" && caseType.kind != "lookup")
+          return ValueOrErrors.Default.throwOne(
+            `union case ${
+              result.Discriminator
+            } expected record or lookup type, got ${JSON.stringify(caseType)}`,
+          );
 
         // TODO  -- assumption here that the fields type is a record
 
         return dispatchFromAPIRawValue(
-          fieldsType,
+          caseType,
           types,
           converters,
           injectedPrimitives,
-        )(result.fields).Then((fields) => {
-          return ValueOrErrors.Default.return(
-            PredicateValue.Default.unionCase(
-              result.caseName,
-              fields as ValueRecord,
-            ),
-          );
-        });
+        )(result[result.Discriminator]).Then((value) =>
+          PredicateValue.Operations.IsRecord(value)
+            ? ValueOrErrors.Default.return(
+                PredicateValue.Default.unionCase(result.Discriminator, value),
+              )
+            : ValueOrErrors.Default.throwOne(
+                `union case ${
+                  result.Discriminator
+                } expected record, got ${PredicateValue.Operations.GetKind(
+                  value,
+                )}`,
+              ),
+        );
       }
 
       if (t.kind == "singleSelection") {
@@ -933,25 +1009,19 @@ export const dispatchToAPIRawValue =
             `caseName expected but got ${JSON.stringify(raw)}`,
           );
         }
-        const fields = raw.fields.get("fields");
-        if (
-          fields == undefined ||
-          !PredicateValue.Operations.IsRecord(fields)
-        ) {
+        const caseType = t.args.get(caseName);
+        if (caseType == undefined) {
           return ValueOrErrors.Default.throwOne(
-            `fields expected but got ${JSON.stringify(raw)}`,
+            `union case ${caseName} not found in type ${JSON.stringify(t)}`,
           );
         }
-        const rawUnionCase = {
-          caseName,
-          fields: fields.fields.toJS(),
-        };
-        return ValueOrErrors.Operations.Return(
-          converters["union"].toAPIRawValue([
-            rawUnionCase,
-            formState?.commonFormState?.modifiedByUser ?? false,
-          ]),
-        );
+
+        return dispatchToAPIRawValue(
+          caseType,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw, formState);
       }
 
       if (t.kind == "singleSelection") {

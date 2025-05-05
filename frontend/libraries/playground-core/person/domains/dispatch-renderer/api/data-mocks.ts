@@ -109,6 +109,14 @@ const entityApis: EntityApis = {
         return (id: Guid) => {
           console.log(`get person ${id}`);
           return Promise.resolve({
+            job: {
+              Discriminator: "Developer",
+              Developer: {
+                name: "Developer",
+                salary: Math.floor(Math.random() * 100000),
+                language: "TypeScript",
+              },
+            },
             category: {
               kind: ["child", "adult", "senior"][
                 Math.round(Math.random() * 10) % 3
@@ -483,14 +491,12 @@ const entityApis: EntityApis = {
               { Value: "addressesByCity" },
               { Value: "friendsAddresses" },
             ],
-            ERP: {
-              caseName: "ERP:SAP",
-              fields: {
-                Value: {
-                  caseName: "SAP:S2",
-                  fields: {
-                    S2OnlyField: true,
-                  },
+            ERPConfig: {
+              Discriminator: "ERPSAP",
+              ERPSAP: {
+                Discriminator: "SAPS2",
+                SAPS2: {
+                  S2OnlyField: true,
                 },
               },
             },
