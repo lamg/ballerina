@@ -48,6 +48,13 @@ module Patterns =
         | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a record.""")
       }
 
+    static member AsTuple(t: ExprType) : Sum<List<ExprType>, Errors> =
+      sum {
+        match t with
+        | ExprType.TupleType l -> return l
+        | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a tuple.""")
+      }
+
     static member AsUnion(t: ExprType) : Sum<_, Errors> =
       sum {
         match t with

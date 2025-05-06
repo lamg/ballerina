@@ -415,15 +415,27 @@ module Renderers =
                 |> state.RunOption
 
               let! apiRendererJson = parentJsonFields |> sum.TryFindField "api" |> state.OfSum
-              let! (apiSourceTypeNameJson, oneApiNameJson) = apiRendererJson |> JsonValue.AsPair |> state.OfSum
 
-              let! (apiSourceTypeName, oneApiName) =
-                state.All2
-                  (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
-                  (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
+              let! oneApiId =
+                state.Either
+                  (state {
+                    let! entityApiNameJson = apiRendererJson |> JsonValue.AsString |> state.OfSum
 
-              let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-              let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.TypeName oneApiName |> state.OfSum
+                    let! entityApi = formsState.TryFindTableApi entityApiNameJson |> state.OfSum
+                    return Choice1Of2(entityApi |> TableApi.Id)
+                  })
+                  (state {
+                    let! (apiSourceTypeNameJson, oneApiNameJson) = apiRendererJson |> JsonValue.AsPair |> state.OfSum
+
+                    let! (apiSourceTypeName, oneApiName) =
+                      state.All2
+                        (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
+                        (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
+
+                    let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
+                    let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.TypeName oneApiName |> state.OfSum
+                    return Choice2Of2(apiType.TypeId, oneApi.EntityName)
+                  })
 
               return
                 OneRenderer
@@ -433,7 +445,7 @@ module Renderers =
                           PrimitiveRendererId = Guid.CreateVersion7()
                           Type = ExprType.OneType details.Type }
 
-                     OneApiId = apiType.TypeId, oneApi.EntityName
+                     OneApiId = oneApiId
                      Details = details
                      Preview = preview |}
             }

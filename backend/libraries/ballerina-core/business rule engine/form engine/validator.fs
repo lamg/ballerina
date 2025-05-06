@@ -72,16 +72,22 @@ module Validator =
           do! !l.One |> Sum.map ignore
           do! !l.Details.Renderer |> Sum.map ignore
 
-          let (apiTypeId, apiName) = l.OneApiId
-          let! _, oneApiMethods = ctx.TryFindOne apiTypeId.TypeName apiName
+          let! apiMethods =
+            match l.OneApiId with
+            | Choice2Of2(apiTypeId, apiName) ->
+              sum {
+                let! (_, oneApiMethods) = ctx.TryFindOne apiTypeId.TypeName apiName
+                return oneApiMethods
+              }
+            | Choice1Of2(_) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
 
           match l.Preview with
           | Some preview ->
-            if oneApiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
+            if apiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
               return!
                 sum.Throw(
                   Errors.Singleton
-                    $"Error: 'one' api {apiTypeId.TypeName} - {apiName} is used in a preview but has no 'GetMany' method."
+                    $"Error: api {l.OneApiId.ToFSharpString} is used in a preview but has no 'GetMany' method."
                 )
             else
               return ()
@@ -936,16 +942,30 @@ module Validator =
 
   type LookupApi with
     static member Validate
-      (generatedLanguageSpecificConfig: GeneratedLanguageSpecificConfig)
+      (_: GeneratedLanguageSpecificConfig)
       (ctx: ParsedFormsContext)
       (lookupApi: LookupApi)
       : Sum<Unit, Errors> =
       sum {
         let! lookupType = ctx.TryFindType lookupApi.EntityName
-        let! fields = lookupType.Type |> ExprType.AsRecord
 
-        let! idField =
-          sum.Any2(fields |> Map.tryFindWithError "id" "key" "id", fields |> Map.tryFindWithError "Id" "key" "Id")
+        let! (idField: ExprType) =
+          sum.Any2(
+            sum {
+              let! fields = lookupType.Type |> ExprType.AsRecord
+
+              return!
+                sum.Any2(fields |> Map.tryFindWithError "id" "key" "id", fields |> Map.tryFindWithError "Id" "key" "Id")
+            },
+            sum {
+              let! fields = lookupType.Type |> ExprType.AsTuple
+
+              return!
+                fields
+                |> Seq.tryHead
+                |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
+            }
+          )
 
         match idField with
         | ExprType.PrimitiveType(PrimitiveType.GuidType)
@@ -956,20 +976,7 @@ module Validator =
               Errors.Singleton
                 $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'string' or 'guid', but it has one of type '{idField}'."
             )
-
-        do!
-          lookupApi.Streams
-          |> Map.values
-          |> Seq.map (fun s -> StreamApi.Validate generatedLanguageSpecificConfig ctx s)
-          |> sum.All
-          |> Sum.map ignore
-
-        do!
-          lookupApi.Manys
-          |> Map.values
-          |> Seq.map (fun (m, _) -> TableApi.Validate generatedLanguageSpecificConfig ctx m)
-          |> sum.All
-          |> Sum.map ignore
+            |> Sum.map ignore
 
         return ()
       }
@@ -1038,6 +1045,4 @@ module Validator =
         for launcher in ctx.Launchers |> Map.values do
           do! FormLauncher.Validate ctx launcher
       }
-      |> state.WithErrorContext $"...when validating spec"
-      |> state.WithErrorContext $"...when validating spec"
       |> state.WithErrorContext $"...when validating spec"

@@ -396,7 +396,7 @@ module Model =
       {| One: Renderer
          Details: NestedRenderer
          Preview: Option<NestedRenderer>
-         OneApiId: TypeId * string
+         OneApiId: Choice<TableApiId, TypeId * string>
       //  Children: RendererChildren
       |}
     | ManyRenderer of
