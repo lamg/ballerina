@@ -19,6 +19,8 @@ import {
   simpleUpdater,
   ValueInfiniteStreamState,
   MapRepo,
+  OneAbstractRendererState,
+  ValueOption,
 } from "../../../../../main";
 
 import { Form } from "./domains/specification/domains/form/state";
@@ -82,6 +84,7 @@ export type DispatcherContext<
   forms: Map<string, Form<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   tableApiSources?: DispatchTableApiSources;
+  lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
     type: DispatchParsedType<T>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
@@ -109,14 +112,37 @@ export type DispatchInfiniteStreamSources = BasicFun<
     string
   >
 >;
-export type DispatchTableApiSource = BasicFun<
-  BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-  BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
->;
+export type DispatchTableApiName = string;
+export type DispatchTableApiSource = {
+  get: BasicFun<Guid, Promise<any>>;
+  getMany: BasicFun<
+    BasicFun<any, ValueOrErrors<PredicateValue, string>>,
+    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+  >;
+};
 
 export type DispatchTableApiSources = BasicFun<
   string,
   ValueOrErrors<DispatchTableApiSource, string>
+>;
+
+export type DispatchApiName = string;
+export type DispatchOneSource = {
+  get: BasicFun<Guid, Promise<any>>;
+  getManyUnlinked: BasicFun<
+    BasicFun<any, ValueOrErrors<PredicateValue, string>>,
+    BasicFun<
+      Guid,
+      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    >
+  >;
+};
+
+export type DispatchLookupSources = (typeName: string) => ValueOrErrors<
+  {
+    one?: BasicFun<DispatchApiName, ValueOrErrors<DispatchOneSource, string>>;
+  },
+  string
 >;
 
 export type DispatchConfigName = string;
@@ -146,6 +172,7 @@ export const parseDispatchFormsToLaunchers =
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
     tableApiSources?: DispatchTableApiSources,
+    lookupSources?: DispatchLookupSources,
   ) =>
   (
     specification: Specification<T>,
@@ -219,6 +246,7 @@ export const parseDispatchFormsToLaunchers =
             injectedPrimitives,
             apiConverters,
             infiniteStreamSources,
+            lookupSources,
             enumOptionsSources,
             tableApiSources,
             entityApis,
@@ -238,6 +266,9 @@ export const parseDispatchFormsToLaunchers =
               injectedPrimitives,
               specification.types,
               specification.forms,
+              apiConverters,
+              lookupSources,
+              tableApiSources,
             ),
             types: specification.types,
             parseFromApiByType: (type: DispatchParsedType<T>) =>
@@ -262,6 +293,7 @@ export type DispatchFormsParserContext<
   concreteRenderers: any;
   fieldTypeConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
+  lookupSources?: DispatchLookupSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
   getFormsConfig: BasicFun<void, Promise<any>>;

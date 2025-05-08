@@ -35,7 +35,10 @@ export const UnionAbstractRenderer = <
             UnionAbstractRendererState<CaseFormState> & {
               type: UnionType<any>;
             },
-        ): CommonAbstractRendererReadonlyContext & {
+        ): CommonAbstractRendererReadonlyContext<
+          UnionType<any>,
+          ValueUnionCase
+        > & {
           type: DispatchParsedType<any>;
         } & UnionAbstractRendererState<CaseFormState> => {
           const context = {
