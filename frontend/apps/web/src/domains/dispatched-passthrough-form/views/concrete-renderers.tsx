@@ -625,8 +625,18 @@ export const PersonConcreteRenderers = {
                 <em>{props.context.details}</em>
               </p>
             )}
-            {props.context.activeOptions == "loading" ? (
-              "loading options"
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
+              <select
+                value={value as string | undefined}
+                onClick={() => props.foreignMutations.loadOptions()}
+              >
+                <>
+                  {value && (
+                    <option value={value as string}>{value as string}</option>
+                  )}
+                </>
+              </select>
             ) : (
               <select
                 value={value as string | undefined}
@@ -657,40 +667,62 @@ export const PersonConcreteRenderers = {
         Context,
         ForeignMutationsExpected
       > =>
-      (props) => (
-        <>
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.details && (
-            <p>
-              <em>{props.context.details}</em>
-            </p>
-          )}
-          {props.context.activeOptions == "loading" ? (
-            "loading options"
-          ) : (
-            <select
-              multiple
-              value={props.context.selectedIds}
-              disabled={props.context.disabled}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(
-                  Array.from(e.currentTarget.options)
-                    .filter((_) => _.selected)
-                    .map((_) => _.value),
-                )
-              }
-            >
-              <>
-                {props.context.activeOptions.map((o) => (
-                  <option value={o.fields.get("Value")! as string}>
-                    {o.fields.get("Value") as string}
-                  </option>
-                ))}
-              </>
-            </select>
-          )}
-        </>
-      ),
+      (props) => {
+        return (
+          <>
+            {props.context.label && <h3>{props.context.label}</h3>}
+            {props.context.details && (
+              <p>
+                <em>{props.context.details}</em>
+              </p>
+            )}
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
+              <select
+                multiple
+                value={props.context.selectedIds}
+                disabled={true}
+              >
+                <>
+                  {props.context.value.fields.map((o) => (
+                    <option
+                      value={(o as ValueRecord).fields.get("Value")! as string}
+                    >
+                      {(o as ValueRecord).fields.get("Value") as string}
+                    </option>
+                  ))}
+                </>
+              </select>
+            ) : (
+              <select
+                multiple
+                value={props.context.selectedIds}
+                disabled={props.context.disabled}
+                onChange={(e) =>
+                  props.foreignMutations.setNewValue(
+                    Array.from(e.currentTarget.options)
+                      .filter((_) => _.selected)
+                      .map((_) => _.value),
+                  )
+                }
+              >
+                <>
+                  {props.context.activeOptions.map((o) => (
+                    <option value={o.fields.get("Value")! as string}>
+                      {o.fields.get("Value") as string}
+                    </option>
+                  ))}
+                </>
+              </select>
+            )}
+            {props.context.activeOptions == "unloaded" && (
+              <button onClick={() => props.foreignMutations.loadOptions()}>
+                Load Options
+              </button>
+            )}
+          </>
+        );
+      },
   },
   streamSingleSelection: {
     defaultInfiniteStream:
