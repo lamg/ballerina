@@ -41,6 +41,28 @@ module Validator =
 
       sum {
         match fr with
+        | Renderer.Multiple(m) ->
+          do! !m.First.NestedRenderer.Renderer |> Sum.map ignore
+
+          do!
+            (m.Rest |> Map.values)
+            |> Seq.map (fun r -> !r.Renderer)
+            |> sum.All
+            |> Sum.map ignore
+
+          do!
+            (m.Rest |> Map.values)
+            |> Seq.map (fun r ->
+              ExprType.Unify
+                Map.empty
+                (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                r.Renderer.Type
+                m.First.NestedRenderer.Type)
+            |> sum.All
+            |> Sum.map ignore
+
+
+          return m.First.NestedRenderer.Type
         | Renderer.InlineFormRenderer i ->
           let formType = i.Body.Type
 
@@ -203,6 +225,9 @@ module Validator =
 
       state {
         match r with
+        | Renderer.Multiple(m) ->
+          do! !!m.First.NestedRenderer
+          do! (m.Rest |> Map.values) |> Seq.map (!!) |> state.All |> state.Map ignore
         | Renderer.InlineFormRenderer i ->
           let formType = i.Body.Type
 

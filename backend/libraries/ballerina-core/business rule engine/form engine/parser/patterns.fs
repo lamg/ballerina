@@ -109,6 +109,7 @@ module Patterns =
   and Renderer with
     member self.Type =
       match self with
+      | Multiple r -> r.First.NestedRenderer.Type
       | PrimitiveRenderer p -> p.Type
       | MapRenderer r -> ExprType.MapType(r.Key.Type, r.Value.Type)
       | SumRenderer r -> ExprType.SumType(r.Left.Type, r.Right.Type)
