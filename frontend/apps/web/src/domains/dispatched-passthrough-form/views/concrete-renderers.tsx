@@ -60,11 +60,134 @@ import {
   SumAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   UnionAbstractRendererView,
+  OneAbstractRendererView,
+  ValueOption,
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
 
 export const PersonConcreteRenderers = {
+  one: {
+    admin:
+      <OneAbstractRendererReadonlyContext, ForeignMutationsExpected>(): any =>
+      (props: any) => {
+        if (
+          !AsyncState.Operations.hasValue(
+            props.context.customFormState.selectedValue.sync,
+          )
+        ) {
+          return undefined;
+        }
+        if (
+          props.context.customFormState.selectedValue.sync.value.kind ==
+          "errors"
+        ) {
+          console.error(
+            props.context.customFormState.selectedValue.sync.value.errors
+              .join("\n")
+              .concat(`\n...When parsing the "one" field value\n...`),
+          );
+          return undefined;
+        }
+        const selectedValue =
+          props.context.customFormState.selectedValue.sync.value.value.value;
+
+        if (!PredicateValue.Operations.IsRecord(selectedValue)) {
+          console.error(
+            `Record expected but got: ${JSON.stringify(
+              selectedValue,
+            )}\n...When rendering "one" field\n...`,
+          );
+          return undefined;
+        }
+        console.debug("props", props);
+        return (
+          <>
+            <p>one admin renderer</p>
+            <p>DetailsRenderer</p>
+            {props.DetailsRenderer({
+              ...props,
+              view: unit,
+            })}
+            <p>PreviewRenderer</p>
+            <button
+              disabled={props.context.disabled}
+              onClick={() => props.foreignMutations.toggleOpen()}
+            >
+              {props?.PreviewRenderer &&
+                props?.PreviewRenderer(selectedValue)?.({
+                  ...props,
+                  view: unit,
+                })}
+              {props.context.customFormState.status == "open" ? "➖" : "➕"}
+            </button>
+            {props.context.customFormState.status == "closed" ? (
+              <></>
+            ) : (
+              <>
+                <input
+                  disabled={props.context.disabled}
+                  value={props.context.customFormState.searchText.value}
+                  onChange={(e) =>
+                    props.foreignMutations.setSearchText(e.currentTarget.value)
+                  }
+                />
+                <ul>
+                  {props.context.customFormState.stream.loadedElements
+                    .valueSeq()
+                    .map((chunk: any) =>
+                      chunk.data.valueSeq().map((element: any) => (
+                        <li>
+                          <button
+                            disabled={props.context.disabled}
+                            onClick={() =>
+                              props.foreignMutations.select(
+                                PredicateValue.Default.option(true, element),
+                              )
+                            }
+                          >
+                            <div
+                              onClick={() =>
+                                props.foreignMutations.select(
+                                  PredicateValue.Default.option(true, element),
+                                )
+                              }
+                              style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                gap: "10px",
+                              }}
+                            />
+                            {props.PreviewRenderer &&
+                              props.PreviewRenderer(element)?.({
+                                ...props,
+                                view: unit,
+                              })}
+                            {props.context.value.isSome &&
+                            (
+                              (props.context.value.value as ValueOption)
+                                .value as ValueRecord
+                            ).fields.get("Id") == element.fields.get("Id")
+                              ? "✅"
+                              : ""}
+                          </button>
+                        </li>
+                      )),
+                    )}
+                </ul>
+              </>
+            )}
+            <button
+              disabled={props.context.hasMoreValues == false}
+              onClick={() => props.foreignMutations.loadMore()}
+            >
+              ⋯
+            </button>
+            <button onClick={() => props.foreignMutations.reload()}>🔄</button>
+          </>
+        );
+      },
+  },
   union: {
     person:
       <
@@ -150,6 +273,84 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
+    userDetails:
+      <
+        Context extends FormLabel,
+        ForeignMutationsExpected,
+      >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
+      (props) => {
+        return (
+          <>
+            {props.context.layout.valueSeq().map((tab) =>
+              tab.columns.valueSeq().map((column) => (
+                <div style={{ display: "block", float: "left" }}>
+                  {column.groups.valueSeq().map((group) =>
+                    group
+                      .filter((fieldName) =>
+                        props.VisibleFieldKeys.has(fieldName),
+                      )
+                      .map((fieldName) => (
+                        <>
+                          {/* <>{console.debug("fieldName", fieldName)}</> */}
+                          <div style={{ display: "block" }}>
+                            {props.EmbeddedFields.get(fieldName)!({
+                              ...props,
+                              context: {
+                                ...props.context,
+                                disabled:
+                                  props.DisabledFieldKeys.has(fieldName),
+                              },
+                              view: unit,
+                            })}
+                          </div>
+                        </>
+                      )),
+                  )}
+                </div>
+              )),
+            )}
+          </>
+        );
+      },
+    preview:
+      <
+        Context extends FormLabel,
+        ForeignMutationsExpected,
+      >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
+      (props) => {
+        return (
+          <>
+            {props.context.layout.valueSeq().map((tab) =>
+              tab.columns.valueSeq().map((column) => (
+                <div style={{ display: "flex" }}>
+                  {column.groups.valueSeq().map((group) =>
+                    group
+                      .filter((fieldName) =>
+                        props.VisibleFieldKeys.has(fieldName),
+                      )
+                      .map((fieldName) => (
+                        <>
+                          {/* <>{console.debug("fieldName", fieldName)}</> */}
+                          <div style={{ display: "block" }}>
+                            {props.EmbeddedFields.get(fieldName)!({
+                              ...props,
+                              context: {
+                                ...props.context,
+                                disabled:
+                                  props.DisabledFieldKeys.has(fieldName),
+                              },
+                              view: unit,
+                            })}
+                          </div>
+                        </>
+                      )),
+                  )}
+                </div>
+              )),
+            )}
+          </>
+        );
+      },
     address:
       <
         Context extends FormLabel,
@@ -193,12 +394,12 @@ export const PersonConcreteRenderers = {
   },
   table: {
     table: (props: any) => () => <>Test</>,
-    finiteTable: (props: any) => {
+    finiteTable: () => (props: any) => {
       return (
         <table>
           <thead style={{ border: "1px solid black" }}>
             <tr style={{ border: "1px solid black" }}>
-              {props.VisibleColumns.map((header: any) => (
+              {props.TableHeaders.map((header: any) => (
                 <th style={{ border: "1px solid black" }}>{header}</th>
               ))}
             </tr>
@@ -585,8 +786,18 @@ export const PersonConcreteRenderers = {
                 <em>{props.context.details}</em>
               </p>
             )}
-            {props.context.activeOptions == "loading" ? (
-              "loading options"
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
+              <select
+                value={value as string | undefined}
+                onClick={() => props.foreignMutations.loadOptions()}
+              >
+                <>
+                  {value && (
+                    <option value={value as string}>{value as string}</option>
+                  )}
+                </>
+              </select>
             ) : (
               <select
                 value={value as string | undefined}
@@ -617,40 +828,62 @@ export const PersonConcreteRenderers = {
         Context,
         ForeignMutationsExpected
       > =>
-      (props) => (
-        <>
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.details && (
-            <p>
-              <em>{props.context.details}</em>
-            </p>
-          )}
-          {props.context.activeOptions == "loading" ? (
-            "loading options"
-          ) : (
-            <select
-              multiple
-              value={props.context.selectedIds}
-              disabled={props.context.disabled}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(
-                  Array.from(e.currentTarget.options)
-                    .filter((_) => _.selected)
-                    .map((_) => _.value),
-                )
-              }
-            >
-              <>
-                {props.context.activeOptions.map((o) => (
-                  <option value={o.fields.get("Value")! as string}>
-                    {o.fields.get("Value") as string}
-                  </option>
-                ))}
-              </>
-            </select>
-          )}
-        </>
-      ),
+      (props) => {
+        return (
+          <>
+            {props.context.label && <h3>{props.context.label}</h3>}
+            {props.context.details && (
+              <p>
+                <em>{props.context.details}</em>
+              </p>
+            )}
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
+              <select
+                multiple
+                value={props.context.selectedIds}
+                disabled={true}
+              >
+                <>
+                  {props.context.value.fields.map((o) => (
+                    <option
+                      value={(o as ValueRecord).fields.get("Value")! as string}
+                    >
+                      {(o as ValueRecord).fields.get("Value") as string}
+                    </option>
+                  ))}
+                </>
+              </select>
+            ) : (
+              <select
+                multiple
+                value={props.context.selectedIds}
+                disabled={props.context.disabled}
+                onChange={(e) =>
+                  props.foreignMutations.setNewValue(
+                    Array.from(e.currentTarget.options)
+                      .filter((_) => _.selected)
+                      .map((_) => _.value),
+                  )
+                }
+              >
+                <>
+                  {props.context.activeOptions.map((o) => (
+                    <option value={o.fields.get("Value")! as string}>
+                      {o.fields.get("Value") as string}
+                    </option>
+                  ))}
+                </>
+              </select>
+            )}
+            {props.context.activeOptions == "unloaded" && (
+              <button onClick={() => props.foreignMutations.loadOptions()}>
+                Load Options
+              </button>
+            )}
+          </>
+        );
+      },
   },
   streamSingleSelection: {
     defaultInfiniteStream:

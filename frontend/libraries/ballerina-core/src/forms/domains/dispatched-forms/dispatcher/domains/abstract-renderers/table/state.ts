@@ -18,6 +18,7 @@ import {
   Bindings,
   ValueTable,
   replaceWith,
+  DispatchTableApiSource,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -28,7 +29,7 @@ import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-da
 import { DispatchOnChange } from "../../../state";
 
 export type AbstractTableRendererReadonlyContext = {
-  tableApiSource: TableApiSource;
+  tableApiSource: DispatchTableApiSource;
   fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
   type: ParsedType<any>;
   bindings: Bindings;
@@ -59,6 +60,7 @@ export const AbstractTableRendererState = {
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
+      // TODO: replace with su
       getChunkWithParams: undefined as any,
       stream: undefined as any,
     },

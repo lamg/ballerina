@@ -21,12 +21,16 @@ export type EnumAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
     options: Synchronized<Unit, OrderedMap<Guid, ValueRecord>>;
+    shouldLoad: boolean;
   };
 };
 export const EnumAbstractRendererState = () => ({
   Default: (): EnumAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
-    customFormState: { options: Synchronized.Default(unit) },
+    customFormState: {
+      options: Synchronized.Default(unit),
+      shouldLoad: false,
+    },
   }),
 });
 
@@ -37,11 +41,12 @@ export type EnumAbstractRendererView<
   Context &
     Value<ValueOption> &
     EnumAbstractRendererState & {
-      activeOptions: "loading" | Array<ValueRecord>;
+      activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
     } & { disabled: boolean },
   EnumAbstractRendererState,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueOption>;
     setNewValue: SimpleCallback<Guid>;
+    loadOptions: SimpleCallback<void>;
   }
 >;

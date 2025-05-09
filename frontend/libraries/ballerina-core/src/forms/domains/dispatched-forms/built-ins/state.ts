@@ -24,6 +24,10 @@ import {
   DispatchCommonFormState,
   UnionAbstractRendererState,
   TableFormRenderer,
+  OneAbstractRendererState,
+  DispatchLookupSources,
+  DispatchTableApiSources,
+  ValueOption,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -78,6 +82,21 @@ type Table = {
   to: number;
 };
 
+export const DispatchGenericTypes = [
+  "SingleSelection",
+  "MultiSelection",
+  "List",
+  "Map",
+  "Union",
+  "Tuple",
+  "Option",
+  "Sum",
+  "KeyOf",
+  "Table",
+  "One",
+] as const;
+export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
+
 type BuiltInApiConverters = {
   string: ApiConverter<string>;
   number: ApiConverter<number>;
@@ -98,6 +117,7 @@ type BuiltInApiConverters = {
   Sum: ApiConverter<Sum<any, any>>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
+  One: ApiConverter<ValueOption>;
 };
 
 export type ConcreteRendererKinds = {
@@ -120,6 +140,7 @@ export type ConcreteRendererKinds = {
   record: Set<string>;
   table: Set<string>;
   union: Set<string>;
+  one: Set<string>;
 };
 
 export const concreteRendererToKind =
@@ -173,11 +194,14 @@ export const tryGetConcreteRenderer =
   };
 
 export const dispatchDefaultState =
-  <T>(
+  <T extends { [key in keyof T]: { type: any; state: any } }>(
     infiniteStreamSources: DispatchInfiniteStreamSources,
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Form<T>>,
+    converters: DispatchApiConverters<T>,
+    lookupSources: DispatchLookupSources | undefined,
+    tableApiSources: DispatchTableApiSources | undefined,
   ) =>
   (
     t: DispatchParsedType<any>,
@@ -249,6 +273,94 @@ export const dispatchDefaultState =
                 `received non singleSelection renderer kind "${renderer.kind}" when resolving defaultState for singleSelection`,
               );
 
+      if (t.kind == "one")
+        return renderer.kind != "baseOneRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
+            )
+          : typeof renderer.api == "string"
+            ? tableApiSources == undefined
+              ? ValueOrErrors.Default.throwOne(
+                  `table api sources referenced but no table api sources are provided`,
+                )
+              : tableApiSources(renderer.api) == undefined
+                ? ValueOrErrors.Default.throwOne(
+                    `cannot find table api source for ${renderer.api}`,
+                  )
+                : t.args[0].kind !== "lookup"
+                  ? ValueOrErrors.Default.throwOne(
+                      `expected lookup type for one but got ${t.args[0]}`,
+                    )
+                  : tableApiSources(renderer.api).Then((tableApiSource) =>
+                      MapRepo.Operations.tryFindWithError(
+                        t.args[0].name,
+                        types,
+                        () =>
+                          `cannot find lookup type ${JSON.stringify(
+                            t.args[0],
+                          )} in ${JSON.stringify(t)}`,
+                      ).Then((lookupType) =>
+                        ValueOrErrors.Default.return(
+                          OneAbstractRendererState.Default((_: string) =>
+                            tableApiSource.getMany(
+                              dispatchFromAPIRawValue(
+                                DispatchParsedType.Default.table(
+                                  "table",
+                                  [lookupType],
+                                  "table",
+                                ),
+                                types,
+                                converters,
+                                injectedPrimitives,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+            : lookupSources == undefined
+              ? ValueOrErrors.Default.throwOne(
+                  `lookup sources referenced but no lookup sources are provided`,
+                )
+              : lookupSources(renderer.api[0]) == undefined
+                ? ValueOrErrors.Default.throwOne(
+                    `cannot find lookup source for ${renderer.api[0]}`,
+                  )
+                : lookupSources(renderer.api[0]).Then((lookupSource) =>
+                    lookupSource.one == undefined
+                      ? ValueOrErrors.Default.throwOne(
+                          `one source not provided for ${renderer.api[0]}`,
+                        )
+                      : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                          .Then((oneSource) =>
+                            MapRepo.Operations.tryFindWithError(
+                              t.args[0].name,
+                              types,
+                              () =>
+                                `cannot find lookup type ${JSON.stringify(
+                                  t.args[0],
+                                )} in ${JSON.stringify(t)}`,
+                            ).Then((lookupType) =>
+                              ValueOrErrors.Default.return(
+                                OneAbstractRendererState.Default(
+                                  oneSource.getManyUnlinked(
+                                    dispatchFromAPIRawValue(
+                                      DispatchParsedType.Default.table(
+                                        "table",
+                                        [lookupType],
+                                        "table",
+                                      ),
+                                      types,
+                                      converters,
+                                      injectedPrimitives,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                  );
+
       if (t.kind == "multiSelection")
         return renderer.kind == "baseEnumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
@@ -297,6 +409,9 @@ export const dispatchDefaultState =
                     injectedPrimitives,
                     types,
                     forms,
+                    converters,
+                    lookupSources,
+                    tableApiSources,
                   )(_, renderer.itemRenderers[index]).Then((itemState) =>
                     ValueOrErrors.Default.return([index, itemState]),
                   ),
@@ -320,6 +435,9 @@ export const dispatchDefaultState =
               injectedPrimitives,
               types,
               forms,
+              converters,
+              lookupSources,
+              tableApiSources,
             )(t.args[0], renderer.leftRenderer).Then((left) =>
               renderer.rightRenderer == undefined
                 ? ValueOrErrors.Default.throwOne(
@@ -330,6 +448,9 @@ export const dispatchDefaultState =
                     injectedPrimitives,
                     types,
                     forms,
+                    converters,
+                    lookupSources,
+                    tableApiSources,
                   )(t.args[1], renderer.rightRenderer).Then((right) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRendererState().Default({
@@ -362,6 +483,9 @@ export const dispatchDefaultState =
                       injectedPrimitives,
                       types,
                       forms,
+                      converters,
+                      lookupSources,
+                      tableApiSources,
                     )(field, renderer.fields.get(fieldName)!).Then((value) =>
                       ValueOrErrors.Default.return([fieldName, value] as const),
                     ),
@@ -396,6 +520,9 @@ export const dispatchDefaultState =
                         injectedPrimitives,
                         types,
                         forms,
+                        converters,
+                        lookupSources,
+                        tableApiSources,
                       )(caseType, caseRenderer).Then((caseState) =>
                         ValueOrErrors.Default.return([caseName, caseState]),
                       ),
@@ -427,6 +554,7 @@ export const dispatchDefaultState =
             `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for lookup`,
           );
         }
+
         const lookupType = types.get(t.name);
 
         if (lookupType == undefined) {
@@ -446,6 +574,9 @@ export const dispatchDefaultState =
           injectedPrimitives,
           types,
           forms,
+          converters,
+          lookupSources,
+          tableApiSources,
         )(lookupType, formRenderer);
       }
 
@@ -919,6 +1050,23 @@ export const dispatchFromAPIRawValue =
                 OrderedMap(values),
               ),
             ),
+          ),
+        );
+      }
+
+      if (t.kind == "one") {
+        const result = converters["One"].fromAPIRawValue(raw);
+        if (!result.isSome) {
+          return ValueOrErrors.Default.return(result);
+        }
+        return dispatchFromAPIRawValue(
+          t.args[0],
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.value).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.option(true, value),
           ),
         );
       }

@@ -12,6 +12,8 @@ import {
   DispatchEnumOptionsSources,
   DispatchTableApiSources,
   DispatchTableApiSource,
+  DispatchOneSource,
+  DispatchLookupSources,
 } from "ballerina-core";
 import { Map, OrderedMap, Range } from "immutable";
 import { ValueInfiniteStreamState, ValueStreamPosition } from "ballerina-core";
@@ -33,133 +35,344 @@ const usersSetupTabsEnum = [
   "ActivityFields",
 ];
 
-const getActiveUsers: DispatchTableApiSource =
-  (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-  (streamParams: Map<string, string>) =>
-  ([streamPosition]: [ValueStreamPosition]) => {
+const getAdminLookup: DispatchOneSource = {
+  get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
-      Values: {
-        [v4()]: {
-          Id: v4(),
-          Name: "Jane",
-          Surname: "Doe",
-          Birthday: "1990-01-01",
-          Email: "jane.doe@example.com",
-          SubscribeToNewsletter: true,
-        },
-        [v4()]: {
-          Id: v4(),
-          Name: "John",
-          Surname: "Doe",
-          Birthday: "1990-01-01",
-          Email: "john.doe@example.com",
-          SubscribeToNewsletter: true,
-        },
-      },
-      HasMore: true,
-      From: 1,
-      To: 2,
-    })).then((res) => ({
-      from: res.From,
-      to: res.To,
-      hasMoreValues: res.HasMore,
-      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-        res.Values,
-        fromApiRaw,
-      ),
+      Id: id,
+      Name: "Admin",
+      Surname: "User",
+      Birthday: "1990-01-01",
+      Email: "admin.user@example.com",
+      SubscribeToNewsletter: true,
     }));
-  };
+  },
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
 
-const getInactiveUsers: BasicFun<
-  BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-  BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-> =
-  (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-  (streamParams: Map<string, string>) =>
-  ([streamPosition]: [ValueStreamPosition]) => {
+const lookupSources: DispatchLookupSources = (typeName: string) =>
+  typeName == "User"
+    ? ValueOrErrors.Default.return({
+        one: (apiName: string) =>
+          apiName == "AdminApi"
+            ? ValueOrErrors.Default.return(getAdminLookup)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting lookup api sources`,
+              ),
+      })
+    : ValueOrErrors.Default.throwOne(
+        `can't find type ${typeName} when getting lookup api source`,
+      );
+
+const getActiveUsers: DispatchTableApiSource = {
+  get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
-      Values: Range(1, 5)
-        .map((_) => ({
-          Id: v4(),
-          Name: faker.person.firstName(),
-          Surname: faker.person.lastName(),
-          Birthday: faker.date.birthdate().toISOString(),
-          Email: faker.internet.email(),
-          SubscribeToNewsletter: faker.datatype.boolean(),
-        }))
-        .reduce((acc, curr) => {
-          acc[curr.Id] = curr;
-          return acc;
-        }, {} as any),
-      HasMore: false,
-      From: 1,
-      To: 5,
-    })).then((res) => ({
-      hasMoreValues: res.HasMore,
-      to: res.To,
-      from: res.From,
-      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-        res.Values,
-        fromApiRaw,
-      ),
-    }));
-  };
-
-const getUserGroups: BasicFun<
-  BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-  BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-> =
-  (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-  (streamParams: Map<string, string>) =>
-  ([streamPosition]: [ValueStreamPosition]) =>
-    PromiseRepo.Default.mock(() => ({
-      Values: {
-        1: {
-          Id: 1,
-          Name: "Group 1",
-          Description: "Group 1 Description",
-        },
+      Id: id,
+      Name: "Jane",
+      Surname: "Doe",
+      Birthday: "1990-01-01",
+      Email: "jane.doe@example.com",
+      SubscribeToNewsletter: true,
+      InactiveUsers: {
+        Values: Range(1, 2)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: true,
+        From: 0,
+        To: 10,
       },
-      HasMore: false,
-      From: 1,
-      To: 1,
-    })).then((res) => ({
-      from: res.From,
-      to: res.To,
-      hasMoreValues: res.HasMore,
-      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-        res.Values,
-        fromApiRaw,
-      ),
     }));
-
-const getActivities: BasicFun<
-  BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-  BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-> =
-  (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-  (streamParams: Map<string, string>) =>
-  ([streamPosition]: [ValueStreamPosition]) =>
-    PromiseRepo.Default.mock(() => ({
-      Values: {
-        1: {
-          Id: 1,
-          Description: "Activity 1",
-          Timestamp: "2021-01-01",
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: {
+          [v4()]: {
+            Id: v4(),
+            Name: "Jane",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "jane.doe@example.com",
+            SubscribeToNewsletter: true,
+            InactiveUsers: {
+              Values: Range(1, 11)
+                .map((_) => ({
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                  InactiveUsers: {
+                    Values: Range(1, 2)
+                      .map((_) => ({
+                        Id: v4(),
+                        Name: faker.person.firstName(),
+                        Surname: faker.person.lastName(),
+                        Birthday: faker.date.birthdate().toISOString(),
+                        Email: faker.internet.email(),
+                        SubscribeToNewsletter: faker.datatype.boolean(),
+                      }))
+                      .reduce((acc, curr) => {
+                        acc[curr.Id] = curr;
+                        return acc;
+                      }, {} as any),
+                    HasMore: true,
+                    From: 0,
+                    To: 10,
+                  },
+                }))
+                .reduce((acc, curr) => {
+                  acc[curr.Id] = curr;
+                  return acc;
+                }, {} as any),
+              HasMore: true,
+              From: 0,
+              To: 10,
+            },
+          },
+          [v4()]: {
+            Id: v4(),
+            Name: "John",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "john.doe@example.com",
+            SubscribeToNewsletter: true,
+            InactiveUsers: {
+              Values: Range(1, 2)
+                .map((_) => ({
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                }))
+                .reduce((acc, curr) => {
+                  acc[curr.Id] = curr;
+                  return acc;
+                }, {} as any),
+              HasMore: true,
+              From: 0,
+              To: 10,
+            },
+          },
         },
-      },
-      HasMore: false,
-      From: 1,
-      To: 1,
-    })).then((res) => ({
-      from: res.From,
-      to: res.To,
-      hasMoreValues: res.HasMore,
-      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-        res.Values,
-        fromApiRaw,
-      ),
+        HasMore: true,
+        From: 1,
+        To: 2,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const getInactiveUsers: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: id,
+      Name: "Jane",
+      Surname: "Doe",
+      Birthday: "1990-01-01",
+      Email: "jane.doe@example.com",
+      SubscribeToNewsletter: true,
     }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const getAdmin: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      isRight: true,
+      right: {
+        Id: id,
+        Name: "Admin",
+        Surname: "User",
+        Birthday: "1990-01-01",
+        Email: "admin.user@example.com",
+        SubscribeToNewsletter: true,
+      },
+    }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const getUserGroups: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: id,
+      Name: "Group 1",
+      Description: "Group 1 Description",
+    }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) =>
+      PromiseRepo.Default.mock(() => ({
+        Values: {
+          1: {
+            Id: 1,
+            Name: "Group 1",
+            Description: "Group 1 Description",
+          },
+        },
+        HasMore: false,
+        From: 1,
+        To: 1,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      })),
+};
+
+const getActivities: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: id,
+      Description: "Activity 1",
+      Timestamp: "2021-01-01",
+    }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) =>
+      PromiseRepo.Default.mock(() => ({
+        Values: {
+          1: {
+            Id: 1,
+            Description: "Activity 1",
+            Timestamp: "2021-01-01",
+          },
+        },
+        HasMore: false,
+        From: 1,
+        To: 1,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      })),
+};
 
 const tableApiSources: DispatchTableApiSources = (streamName: string) =>
   streamName == "ActiveUsersApi"
@@ -170,9 +383,11 @@ const tableApiSources: DispatchTableApiSources = (streamName: string) =>
         ? ValueOrErrors.Default.return(getUserGroups)
         : streamName == "ActivitiesApi"
           ? ValueOrErrors.Default.return(getActivities)
-          : ValueOrErrors.Default.throwOne(
-              `Cannot find table API ${streamName}`,
-            );
+          : streamName == "AdminApi"
+            ? ValueOrErrors.Default.return(getAdmin)
+            : ValueOrErrors.Default.throwOne(
+                `Cannot find table API ${streamName}`,
+              );
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "UserFieldsApi"
@@ -260,6 +475,24 @@ const entityApis: EntityApis = {
                   Birthday: faker.date.birthdate().toISOString(),
                   Email: faker.internet.email(),
                   SubscribeToNewsletter: faker.datatype.boolean(),
+                  InactiveUsers: {
+                    Values: Range(1, 2)
+                      .map((_) => ({
+                        Id: v4(),
+                        Name: faker.person.firstName(),
+                        Surname: faker.person.lastName(),
+                        Birthday: faker.date.birthdate().toISOString(),
+                        Email: faker.internet.email(),
+                        SubscribeToNewsletter: faker.datatype.boolean(),
+                      }))
+                      .reduce((acc, curr) => {
+                        acc[curr.Id] = curr;
+                        return acc;
+                      }, {} as any),
+                    HasMore: true,
+                    From: 0,
+                    To: 10,
+                  },
                 }))
                 .reduce((acc, curr) => {
                   acc[curr.Id] = curr;
@@ -268,6 +501,17 @@ const entityApis: EntityApis = {
               HasMore: true,
               From: 0,
               To: 10,
+            },
+            Admin: {
+              isRight: false,
+              // isRight: true,
+              // right: {
+              //   Name: "Spiffy",
+              //   Surname: "User",
+              //   Birthday: "1990-01-01",
+              //   Email: "admin.user@example.com",
+              //   SubscribeToNewsletter: true,
+              // },
             },
             Inactive: {
               Values: {},
@@ -325,4 +569,5 @@ export const UsersSetupFromConfigApis = {
   enumApis,
   entityApis,
   tableApiSources,
+  lookupSources,
 };

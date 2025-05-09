@@ -10,6 +10,7 @@ import {
   DispatchPrimitiveType,
   ListType,
   MapType,
+  OneType,
   SumType,
   TableType,
   TupleType,
@@ -20,6 +21,7 @@ import {
   MapRepo,
   NestedLookupDispatcher,
   NestedMultiSelectionDispatcher,
+  NestedOneDispatcher,
   NestedSingleSelectionDispatcher,
   NestedTableDispatcher,
   NestedUnionDispatcher,
@@ -254,7 +256,27 @@ export const NestedDispatcher = {
         ? ValueOrErrors.Default.throwOne(
             `expected renderer.kind == "baseUnionRenderer" but got ${renderer.kind}`,
           )
-        : NestedUnionDispatcher.Dispatch(type, renderer, dispatcherContext),
+        : NestedUnionDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ),
+    DispatchAsOneRenderer: <
+      T extends { [key in keyof T]: { type: any; state: any } },
+    >(
+      type: OneType<T>,
+      renderer: BaseRenderer<T>,
+      dispatcherContext: DispatcherContext<T>,
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      renderer.kind != "baseOneRenderer"
+        ? ValueOrErrors.Default.throwOne(
+            `expected renderer.kind == "baseOneRenderer" but got ${renderer.kind}`,
+          )
+        : NestedOneDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ),
     DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
       renderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
@@ -354,9 +376,15 @@ export const NestedDispatcher = {
                                   renderer,
                                   dispatcherContext,
                                 )
-                              : ValueOrErrors.Default.throwOne(
-                                  `unknown type kind "${type.kind}"`,
-                                );
+                              : type.kind == "one"
+                                ? NestedDispatcher.Operations.DispatchAsOneRenderer(
+                                    type,
+                                    renderer,
+                                    dispatcherContext,
+                                  )
+                                : ValueOrErrors.Default.throwOne(
+                                    `unknown type kind "${type.kind}"`,
+                                  );
 
       return result.MapErrors((errors) =>
         errors.map(
