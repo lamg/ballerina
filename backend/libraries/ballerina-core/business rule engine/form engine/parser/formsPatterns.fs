@@ -1,35 +1,17 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
-module Patterns =
-
+module FormsPatterns =
+  open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.Expr.Types.Patterns
-  open System
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.Map
   open Ballerina.State.WithError
   open Ballerina.Errors
-  open Ballerina.Core.Json
-  open Ballerina.Core.String
-  open Ballerina.Core.Object
-  open FSharp.Data
-  open Ballerina.Collections.NonEmptyList
-
-  type SumBuilder with
-    member sum.TryFindField name fields =
-      fields
-      |> Seq.tryFind (fst >> (=) name)
-      |> Option.map snd
-      |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find field '{name}'")
-
-  type StateBuilder with
-    member state.TryFindField name fields =
-      fields |> sum.TryFindField name |> state.OfSum
 
   type ParsedFormsContext with
+    static member ContextActions: ContextActions<ParsedFormsContext> =
+      { TryFindType = fun ctx name -> ctx.TryFindType name }
+
     member ctx.TryFindEnum name =
       ctx.Apis.Enums |> Map.tryFindWithError name "enum" name
 
