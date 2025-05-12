@@ -4,6 +4,7 @@ import {
   AsyncState,
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   Guid,
   PredicateValue,
   replaceWith,
@@ -12,6 +13,8 @@ import {
   ValueOption,
   ValueRecord,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
@@ -25,7 +28,10 @@ import { OrderedMap } from "immutable";
 export const EnumAbstractRenderer = <
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueOption> & {
@@ -57,15 +63,18 @@ export const EnumAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Option value expected for enum but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Option value expected for enum but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -141,7 +150,7 @@ export const EnumAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([
     Co.Template<

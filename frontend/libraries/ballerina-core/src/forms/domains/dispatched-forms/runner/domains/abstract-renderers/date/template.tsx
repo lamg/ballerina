@@ -3,9 +3,12 @@ import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
@@ -13,7 +16,10 @@ import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
 export const DateAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<Date> & {
@@ -34,15 +40,18 @@ export const DateAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Date
-          value expected for date but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Date value expected for date but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -73,7 +82,7 @@ export const DateAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

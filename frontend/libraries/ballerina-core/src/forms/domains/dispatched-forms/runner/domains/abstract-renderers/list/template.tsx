@@ -3,6 +3,7 @@ import {
   Bindings,
   DispatchCommonFormState,
   DispatchDelta,
+  IdWrapperProps,
   ListRepo,
   MapRepo,
   PredicateValue,
@@ -10,6 +11,8 @@ import {
   Updater,
   ValueTuple,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
@@ -39,6 +42,8 @@ export const ListAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedElementTemplate = (elementIndex: number) =>
     elementTemplate
@@ -149,15 +154,18 @@ export const ListAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
-          value expected for list but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Tuple value expected for list but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -290,7 +298,7 @@ export const ListAbstractRenderer = <
           }}
           embeddedElementTemplate={embeddedElementTemplate}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

@@ -14,6 +14,9 @@ import {
   replaceWith,
   DispatchCommonFormState,
   DispatchOnChange,
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {
@@ -49,6 +52,8 @@ export const MapAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedKeyTemplate = (elementIndex: number) =>
     keyTemplate
@@ -292,15 +297,18 @@ export const MapAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
-          value expected for map but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Tuple value expected for map but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -377,7 +385,7 @@ export const MapAbstractRenderer = <
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

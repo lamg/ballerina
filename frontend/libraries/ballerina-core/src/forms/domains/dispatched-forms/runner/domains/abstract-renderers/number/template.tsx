@@ -1,11 +1,14 @@
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererState,
@@ -16,7 +19,10 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 export const NumberAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<number> & {
@@ -37,15 +43,18 @@ export const NumberAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Number value expected for number but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Number value expected for number but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -65,7 +74,7 @@ export const NumberAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

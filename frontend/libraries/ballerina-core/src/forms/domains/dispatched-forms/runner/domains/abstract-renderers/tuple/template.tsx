@@ -7,6 +7,7 @@ import {
   DispatchCommonFormState,
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   MapRepo,
   PredicateValue,
   replaceWith,
@@ -15,6 +16,8 @@ import {
   Value,
   ValueTuple,
   DispatchOnChange,
+  getLeafIdentifierFromIdentifier,
+  ErrorRendererProps,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -43,6 +46,8 @@ export const DispatchTupleAbstractRenderer = <
       }
     >
   >,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedItemTemplates = (itemIndex: number) =>
     itemTemplates
@@ -166,16 +171,19 @@ export const DispatchTupleAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
-          value expected for tuple but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Tuple value expected for tuple but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -187,7 +195,7 @@ export const DispatchTupleAbstractRenderer = <
           }}
           embeddedItemTemplates={embeddedItemTemplates}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

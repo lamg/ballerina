@@ -3,12 +3,15 @@ import {
   CommonAbstractRendererState,
   DispatchCommonFormState,
   DispatchDelta,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   Sum,
   Value,
   ValueSum,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -23,6 +26,8 @@ export const SumAbstractRenderer = <
   RightFormState extends CommonAbstractRendererState,
   ForeignMutationsExpected,
 >(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   leftTemplate?: Template<
     Value<PredicateValue> &
       LeftFormState & { disabled: boolean; extraContext: any },
@@ -201,16 +206,19 @@ export const SumAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Sum
-          value expected for sum but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Sum value expected for sum but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -221,7 +229,7 @@ export const SumAbstractRenderer = <
           embeddedLeftTemplate={embeddedLeftTemplate}
           embeddedRightTemplate={embeddedRightTemplate}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

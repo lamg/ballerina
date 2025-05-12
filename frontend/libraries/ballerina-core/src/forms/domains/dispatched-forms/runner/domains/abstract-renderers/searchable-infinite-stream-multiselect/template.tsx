@@ -10,6 +10,7 @@ import {
   DispatchDelta,
   FormLabel,
   id,
+  IdWrapperProps,
   InfiniteStreamLoader,
   InfiniteStreamState,
   PredicateValue,
@@ -19,6 +20,8 @@ import {
   Value,
   ValueRecord,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -27,7 +30,10 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueRecord> & {
@@ -111,16 +117,18 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for searchable infinite stream multiselect but
-          got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Record value expected for searchable infinite stream multiselect but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -219,7 +227,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([
     loaderRunner,

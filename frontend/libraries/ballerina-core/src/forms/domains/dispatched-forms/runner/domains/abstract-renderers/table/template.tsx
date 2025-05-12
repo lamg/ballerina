@@ -18,6 +18,9 @@ import {
   Bindings,
   RecordAbstractRendererState,
   DispatchOnChange,
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -48,6 +51,8 @@ export const TableAbstractRenderer = <
   >,
   DetailsRenderer: Template<any, any, any, any> | undefined,
   Layout: PredicateVisibleColumns,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ): Template<any, any, any, any> => {
   const embedCellTemplate =
     (column: string, cellTemplate: Template<any, any, any, any>) =>
@@ -231,17 +236,20 @@ export const TableAbstractRenderer = <
   >((props) => {
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
-        `Table expected but got: ${JSON.stringify(
+        `TableValue expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering table field\n...${
           props.context.identifiers.withLauncher
         }`,
       );
       return (
-        <p>
-          {props.context?.label && `${props.context?.label}: `}RENDER ERROR:
-          Table value expected for table but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Table value expected for table but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
 
@@ -259,14 +267,14 @@ export const TableAbstractRenderer = <
       Layout,
     );
 
-    // TODO -- set error template up top
     if (visibleColumns.kind == "errors") {
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
       return (
-        <p>
-          {props.context?.label}: Error while computing visible columns, check
-          console
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Error while computing visible columns, check console`}
+        />
       );
     }
 
@@ -292,10 +300,11 @@ export const TableAbstractRenderer = <
     if (disabledColumnKeys.kind == "errors") {
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
       return (
-        <p>
-          {props.context?.label}: Error while computing disabled column keys,
-          check console
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Error while computing disabled column keys, check console`}
+        />
       );
     }
 
@@ -328,8 +337,8 @@ export const TableAbstractRenderer = <
       );
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -388,7 +397,7 @@ export const TableAbstractRenderer = <
           EmbeddedTableData={tableData}
           DetailsRenderer={embedDetailsRenderer}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
 };
