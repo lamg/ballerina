@@ -13,6 +13,12 @@ let private parseExpr json =
 
 module ExprParserTests =
   [<Test>]
+  let ``Should parse unit`` () =
+    let json = JsonValue.Record [| "kind", JsonValue.String "unit" |]
+    let result = parseExpr json
+    assertSuccess result (Expr.Value(Value.Unit))
+
+  [<Test>]
   let ``Should parse boolean`` () =
     let json = JsonValue.Boolean true
 
@@ -28,9 +34,18 @@ module ExprParserTests =
 
   [<Test>]
   let ``Should parse int`` () =
-    let json = JsonValue.Number 1m
+    let json =
+      JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "1" |]
+
     let result = parseExpr json
     assertSuccess result (Expr.Value(Value.ConstInt 1))
+
+  [<Test>]
+  let ``Should parse int (backward compatibility)`` () =
+    let json = JsonValue.Number 2m
+
+    let result = parseExpr json
+    assertSuccess result (Expr.Value(Value.ConstInt 2))
 
   [<Test>]
   let ``Should parse binary operator`` () =
@@ -128,7 +143,60 @@ module ExprParserTests =
 
     assertSuccess result (Expr.Project(Expr.Value(Value.ConstString "array"), 2))
 
+  [<Test>]
+  let ``Should parse record`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "record"
+           "fields",
+           JsonValue.Record
+             [| "name", JsonValue.String "Alice"
+                "age", JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "30" |] |] |]
+
+    let result = parseExpr json
+
+    let expectedExpr =
+      Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
+
+    assertSuccess result expectedExpr
+
+  [<Test>]
+  let ``Should parse caseCons`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "caseCons"
+           "case", JsonValue.String "caseName"
+           "value", JsonValue.Boolean true |]
+
+    let result = parseExpr json
+
+    let expectedExpr = Expr.Value(Value.CaseCons("caseName", Value.ConstBool true))
+
+    assertSuccess result expectedExpr
+
+  [<Test>]
+  let ``Should parse tuple`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "tuple"
+           "elements", JsonValue.Array [| JsonValue.String "a"; JsonValue.String "b" |] |]
+
+    let result = parseExpr json
+
+    let expectedExpr =
+      Expr.Value(Value.Tuple [ Value.ConstString "a"; Value.ConstString "b" ])
+
+    assertSuccess result expectedExpr
+
+
 module ExprToAndFromJsonTests =
+  [<Test>]
+  let ``Should convert to and from Json unit`` () =
+    let expr = Expr.Value(Value.Unit)
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
   [<Test>]
   let ``Should convert to and from Json boolean`` () =
     let expr = Expr.Value(Value.ConstBool true)
@@ -144,7 +212,7 @@ module ExprToAndFromJsonTests =
     assertSuccess result expr
 
   [<Test>]
-  let ``Should convert to and from Json number`` () =
+  let ``Should convert int to and from Json`` () =
     let expr = Expr.Value(Value.ConstInt 42)
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 
@@ -210,6 +278,31 @@ module ExprToAndFromJsonTests =
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 
     assertSuccess result expr
+
+  [<Test>]
+  let ``Should convert to and from Json record`` () =
+    let expr =
+      Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
+
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should convert to and from Json caseCons`` () =
+    let expr = Expr.Value(Value.CaseCons("caseName", Value.ConstInt 30))
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should convert tuple to and from Json`` () =
+    let expr = Expr.Value(Value.Tuple [ Value.ConstString "a"; Value.ConstString "b" ])
+
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
 
 module ExprToAndFromJsonRecursiveExpressions =
 
@@ -309,3 +402,31 @@ module ExprParserErrorTests =
     | Right errors ->
       Assert.That(errors.Errors.Head.Message, Is.EqualTo "Error: MakeRecord not implemented")
       Assert.That(errors.Errors.Tail, Is.Empty)
+
+  [<Test>]
+  let ``Should return an error for each parser if the kind is invalid`` () =
+    let json = JsonValue.Record [| "kind", JsonValue.String "invalid" |]
+
+    let result = parseExpr json
+
+    match result with
+    | Left _ -> Assert.Fail "Expected error but got success"
+    | Right errors -> Assert.That(errors.Errors |> NonEmptyList.ToList |> List.length, Is.GreaterThan 1)
+
+  [<TestCase("int")>]
+  [<TestCase("and")>]
+  [<TestCase("lambda")>]
+  [<TestCase("matchCase")>]
+  [<TestCase("fieldLookup")>]
+  [<TestCase("isCase")>]
+  [<TestCase("record")>]
+  [<TestCase("caseCons")>]
+  [<TestCase("tuple")>]
+  let ``Should only return an error for the specific parser if the kind is invalid`` (kind: string) =
+    let json = JsonValue.Record [| "kind", JsonValue.String kind |]
+
+    let result = parseExpr json
+
+    match result with
+    | Left _ -> Assert.Fail "Expected error but got success"
+    | Right errors -> Assert.That(errors.Errors |> NonEmptyList.ToList |> List.length, Is.EqualTo 1)
