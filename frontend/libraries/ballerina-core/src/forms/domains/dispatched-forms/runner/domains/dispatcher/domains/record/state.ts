@@ -48,6 +48,7 @@ export const RecordDispatcher = {
                 template: Template<any, any, any, any>;
                 visible?: Expr;
                 disabled?: Expr;
+                label?: Expr;
                 GetDefaultState: () => any;
               },
             ],
@@ -63,6 +64,7 @@ export const RecordDispatcher = {
                 type.fields,
                 () => `cannot find field "${fieldName}" in types`,
               );
+
               return res.Then((fieldType) =>
                 RecordFieldDispatcher.Operations.Dispatch(
                   fieldName,
@@ -78,6 +80,7 @@ export const RecordDispatcher = {
                           template,
                           visible: fieldRenderer.visible,
                           disabled: fieldRenderer.disabled,
+                          label: fieldRenderer.label,
                           GetDefaultState: () => defaultState,
                         },
                       ]),
