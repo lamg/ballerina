@@ -3,8 +3,13 @@ import {
   ValueOrErrors,
   Errors,
   DispatchParsedType,
+  BasicFun,
+  MapRepo
 } from "../../../../../../../../main";
 import { PredicateValue } from "../../state";
+
+type ExtractedTypeInstances = ValueOrErrors<Array<PredicateValue>, Errors<string[]>>
+type TypeInstancesExtractor = BasicFun<PredicateValue, ExtractedTypeInstances>
 
 export const PredicateValueExtractor = {
   Operations: {
@@ -12,9 +17,7 @@ export const PredicateValueExtractor = {
       lookupName: string,
       typesMap: Map<string, DispatchParsedType<any>>,
       t: DispatchParsedType<any>,
-    ): ((
-      v: PredicateValue,
-    ) => ValueOrErrors<Array<PredicateValue>, Errors<any>>) => {
+    ): TypeInstancesExtractor => {
       const self = PredicateValueExtractor.Operations.ExtractPredicateValue;
       switch (t.kind) {
         case "lookup": {
@@ -29,11 +32,8 @@ export const PredicateValueExtractor = {
               );
           }
 
-          const traverseLookupValue = self(lookupName, typesMap, lookupType);
-          return (v) =>
-            t.name === lookupName
-              ? ValueOrErrors.Default.return([v])
-              : traverseLookupValue(v);
+          return t.name === lookupName ? ((v) => ValueOrErrors.Default.return([v])) :
+            self(lookupName, typesMap, lookupType)
         }
         case "primitive":
           return (_) => ValueOrErrors.Default.return([]);
@@ -52,10 +52,10 @@ export const PredicateValueExtractor = {
           const traverseRecordFields = t.fields.map((f) =>
             self(lookupName, typesMap, f),
           );
-          return (v: PredicateValue) =>
+          return (v: PredicateValue) : ExtractedTypeInstances =>
             !PredicateValue.Operations.IsRecord(v)
               ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton(["not a ValueRecord", v]),
+                  Errors.Default.singleton(["not a ValueRecord", JSON.stringify(v)]),
                 )
               : ValueOrErrors.Operations.All(
                   List(
@@ -79,7 +79,7 @@ export const PredicateValueExtractor = {
               ? ValueOrErrors.Default.throwOne(
                   Errors.Default.singleton([
                     "not a ValueOption (from SingleSelection)",
-                    v,
+                    JSON.stringify(v),
                   ]),
                 )
               : !v.isSome
@@ -98,7 +98,7 @@ export const PredicateValueExtractor = {
               ? ValueOrErrors.Default.throwOne(
                   Errors.Default.singleton([
                     "not a ValueRecord (from MultiSelection)",
-                    v,
+                    JSON.stringify(v),
                   ]),
                 )
               : ValueOrErrors.Operations.All(
@@ -120,7 +120,7 @@ export const PredicateValueExtractor = {
           return (v: PredicateValue) =>
             !PredicateValue.Operations.IsTuple(v)
               ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton(["not a ValueRecord (from Map)", v]),
+                  Errors.Default.singleton(["not a ValueRecord (from Map)", JSON.stringify(v)]),
                 )
               : (
                   ValueOrErrors.Operations.All(
@@ -130,7 +130,7 @@ export const PredicateValueExtractor = {
                           ? ValueOrErrors.Default.throwOne(
                               Errors.Default.singleton([
                                 "not a ValueRecord (from inner Map)",
-                                entry,
+                                JSON.stringify(entry),
                               ]),
                             )
                           : ValueOrErrors.Operations.All(
@@ -162,7 +162,7 @@ export const PredicateValueExtractor = {
           return (v) =>
             !PredicateValue.Operations.IsSum(v)
               ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton(["not a ValueSum", v]),
+                  Errors.Default.singleton(["not a ValueSum", JSON.stringify(v)]),
                 )
               : ValueOrErrors.Operations.All(
                   List(
@@ -184,7 +184,7 @@ export const PredicateValueExtractor = {
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)
               ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton(["not a ValueTuple", v]),
+                  Errors.Default.singleton(["not a ValueTuple", JSON.stringify(v)]),
                 )
               : ValueOrErrors.Operations.All(
                   List(
@@ -199,39 +199,32 @@ export const PredicateValueExtractor = {
                   ),
                 );
         }
-        // case "union": {
-        //   const traverseUnionFields = t.args.map((f) =>
-        //     self(lookupName, typesMap, f.fields),
-        //   );
-        //   return (v) =>
-        //     !PredicateValue.Operations.IsTuple(v)
-        //       ? ValueOrErrors.Default.throwOne(
-        //           Errors.Default.singleton([
-        //             "not a ValueRecord (from union)",
-        //             v,
-        //           ]),
-        //         )
-        //       : (ValueOrErrors.Operations.All(
-        //           traverseUnionFields
-        //             .filter((_, k) => v.fields.has(k))
-        //             .map<ValueOrErrors<Array<PredicateValue>, Errors<any>>>(
-        //               (traverseField, k) => traverseField(v.values.get(k)!),
-        //             )
-        //             .valueSeq()
-        //             .toList(),
-        //         ).Map((listFailingChecks) =>
-        //           listFailingChecks.reduce(
-        //             (acc, curr) => [...acc, ...curr],
-        //             [] as Array<PredicateValue>,
-        //           ),
-        //         ));
-        // }
+        case "union": {
+          const traverseCases:Map<string, TypeInstancesExtractor> = t.args.map((f) =>
+            self(lookupName, typesMap, f)
+          ).toMap();
+          return (v) : ExtractedTypeInstances =>
+            !PredicateValue.Operations.IsUnionCase(v)
+              ? ValueOrErrors.Default.throwOne(
+                  Errors.Default.singleton([
+                    "not a ValueUnion (from union)",
+                    JSON.stringify(v),
+                  ]),
+                )
+              : MapRepo.Operations.tryFindWithError<string, TypeInstancesExtractor, Errors<string[]>>(v.caseName, traverseCases, () => Errors.Default.singleton([
+                    `unexpected union case ${v.caseName}`,
+                    JSON.stringify(v),
+                  ])).Then(
+                (traverseCase:TypeInstancesExtractor) =>
+                  traverseCase(v.fields)
+              )
+        }
         case "list": {
           const traverseListField = self(lookupName, typesMap, t.args[0]);
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)
               ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton(["not a ValueTuple (from List)", v]),
+                  Errors.Default.singleton(["not a ValueTuple (from List)", JSON.stringify(v)]),
                 )
               : ValueOrErrors.Operations.All(
                   List(v.values.map((v) => traverseListField(v))),
@@ -248,7 +241,7 @@ export const PredicateValueExtractor = {
         default:
           return (_) =>
             ValueOrErrors.Default.throwOne(
-              Errors.Default.singleton(["unknown type", t]),
+              Errors.Default.singleton(["unknown type", JSON.stringify(t)]),
             );
       }
     },
