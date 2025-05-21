@@ -219,6 +219,22 @@ export const PredicateValueExtractor = {
                   traverseCase(v.fields)
               )
         }
+        case "one": {
+          const traverseValue:TypeInstancesExtractor = self(lookupName, typesMap, t.args)
+          return (v) : ExtractedTypeInstances =>
+            PredicateValue.Operations.IsOption(v) ?
+              v.isSome ? traverseValue(v.value)
+              : ValueOrErrors.Default.return([])
+            : PredicateValue.Operations.IsSum(v) ?
+              v.value.kind == "r" ? traverseValue(v.value.value)
+              : ValueOrErrors.Default.return([])
+            : ValueOrErrors.Default.throwOne(
+                  Errors.Default.singleton([
+                    "not a One/Option or One/Sum (from one)",
+                    JSON.stringify(v),
+                  ]),
+                )
+        }
         case "list": {
           const traverseListField = self(lookupName, typesMap, t.args[0]);
           return (v) =>

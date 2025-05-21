@@ -257,7 +257,7 @@ export type TableType<T> = {
 export type OneType<T> = {
   kind: "one";
   name: DispatchTypeName;
-  args: Array<DispatchParsedType<T>>;
+  args: DispatchParsedType<T>;
   typeName: DispatchTypeName;
 };
 
@@ -384,7 +384,7 @@ export const DispatchParsedType = {
     }),
     one: <T>(
       name: DispatchTypeName,
-      args: Array<DispatchParsedType<T>>,
+      args: DispatchParsedType<T>,
       typeName: DispatchTypeName,
     ): OneType<T> => ({
       kind: "one",
@@ -752,7 +752,7 @@ export const DispatchParsedType = {
             injectedPrimitives,
           ).Then((parsedArg) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.one(typeName, [parsedArg], typeName),
+              DispatchParsedType.Default.one(typeName, parsedArg, typeName),
             ),
           );
         return ValueOrErrors.Default.throwOne(
