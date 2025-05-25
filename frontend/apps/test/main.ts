@@ -121,3 +121,14 @@ export const RendererTraversal = {
     }
   }
 }
+
+const testInvocation = RendererTraversal.Operations.Run<any, Array<PredicateValue>>(null!, null!, {
+  types: null!,
+  forms: null!,
+  primitiveRendererNamesByType: null!,
+  joinRes: null!, // basically append or concat the arrays of the individual traversals
+  traverseSingleType: (t => 
+    t.kind == "lookup" && t.name == "Evidence" ?
+      Option.Default.some((ctx: EvalContext<any, Array<PredicateValue>>) => ValueOrErrors.Default.return([ctx.traversalIterator])) :
+    Option.Default.none())
+})
