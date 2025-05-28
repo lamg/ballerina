@@ -128,8 +128,12 @@ export const PersonConcreteRenderers = {
               <>
                 <input
                   disabled={ctx.disabled}
-                  value={ctx.customFormState.searchText.value}
-                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                  value={
+                    ctx.customFormState.streamParams.value.get("search") ?? ""
+                  }
+                  onChange={(e) =>
+                    fm.setStreamParam("search", e.currentTarget.value)
+                  }
                 />
                 <ul>
                   {ctx.customFormState.stream.loadedElements
@@ -223,8 +227,12 @@ export const PersonConcreteRenderers = {
                 <>
                   <input
                     disabled={ctx.disabled}
-                    value={ctx.customFormState.searchText.value}
-                    onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                    value={
+                      ctx.customFormState.streamParams.value.get("search") ?? ""
+                    }
+                    onChange={(e) =>
+                      fm.setStreamParam("search", e.currentTarget.value)
+                    }
                   />
                   <ul>
                     {ctx.customFormState.stream.loadedElements
@@ -292,8 +300,12 @@ export const PersonConcreteRenderers = {
               <>
                 <input
                   disabled={ctx.disabled}
-                  value={ctx.customFormState.searchText.value}
-                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                  value={
+                    ctx.customFormState.streamParams.value.get("search") ?? ""
+                  }
+                  onChange={(e) =>
+                    fm.setStreamParam("search", e.currentTarget.value)
+                  }
                 />
                 <ul>
                   {ctx.customFormState.stream.loadedElements
@@ -392,8 +404,12 @@ export const PersonConcreteRenderers = {
               <>
                 <input
                   disabled={ctx.disabled}
-                  value={ctx.customFormState.searchText.value}
-                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                  value={
+                    ctx.customFormState.streamParams.value.get("search") ?? ""
+                  }
+                  onChange={(e) =>
+                    fm.setStreamParam("search", e.currentTarget.value)
+                  }
                 />
                 <ul>
                   {ctx.customFormState.stream.loadedElements
