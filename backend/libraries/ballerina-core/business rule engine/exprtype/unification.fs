@@ -66,6 +66,10 @@ module Unification =
       sum {
         match t1, t2 with
         | ExprType.UnitType, ExprType.UnitType -> return UnificationConstraints.Zero()
+        | ExprType.UnitType, ExprType.RecordType fields when fields |> Map.isEmpty ->
+          return UnificationConstraints.Zero()
+        | ExprType.RecordType fields, ExprType.UnitType when fields |> Map.isEmpty ->
+          return UnificationConstraints.Zero()
         | ExprType.LookupType l1, ExprType.LookupType l2 when l1 = l2 -> return UnificationConstraints.Zero()
         | ExprType.LookupType l1, ExprType.LookupType l2 when l1 <> l2 ->
           return! sum.Throw(Errors.Singleton($"Error: types {t1} and {t2} cannot be unified under typedefs {typedefs}"))
