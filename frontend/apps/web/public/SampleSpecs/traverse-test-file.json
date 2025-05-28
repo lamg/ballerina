@@ -1,0 +1,295 @@
+{
+  "types": {
+    "GlobalConfiguration": {
+      "extends": [],
+      "fields": {}
+    },
+    "ERPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "ERPSAP",
+          "fields": {
+            "Value": "SAPConfig"
+          }
+        },
+        {
+          "caseName": "ERPBC",
+          "fields": {}
+        },
+        {
+          "caseName": "ERPFAndO",
+          "fields": {}
+        }
+      ]
+    },
+    "SAPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "SAPS2",
+          "fields": {
+            "S2OnlyField": "boolean"
+          }
+        },
+        {
+          "caseName": "SAPS3",
+          "fields": {
+            "S3OnlyField": "boolean"
+          }
+        },
+        {
+          "caseName": "SAPS4",
+          "fields": {
+            "S4OnlyField": "boolean"
+          }
+        }
+      ]
+    },
+    "CollectionReference": {
+      "extends": [],
+      "fields": {
+        "DisplayValue": "string",
+        "Id": "guid"
+      }
+    },
+    "CityRef": {
+      "extends": ["CollectionReference"],
+      "fields": {}
+    },
+    "Address": {
+      "fields": {
+        "Street": "string",
+        "Town": "string",
+        "Number": "number",
+        "Category": "injectedCategory",
+        "SumExample": {
+          "fun": "Sum",
+          "args": ["unit", "injectedCategory"]
+        },
+        "TupleExample": {
+          "fun": "Tuple",
+          "args": ["injectedCategory", "injectedCategory", "injectedCategory"]
+        }
+      }
+    },
+    "ColorsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Red",
+          "fields": {}
+        },
+        {
+          "caseName": "Green",
+          "fields": {}
+        },
+        {
+          "caseName": "Blue",
+          "fields": {}
+        }
+      ]
+    },
+    "ColorRef": {
+      "fields": {
+        "Value": "ColorsEnum"
+      }
+    },
+    "InterestsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Soccer",
+          "fields": {}
+        },
+        {
+          "caseName": "Hockey",
+          "fields": {}
+        },
+        {
+          "caseName": "BoardGames",
+          "fields": {}
+        },
+        {
+          "caseName": "HegelianPhilosophy",
+          "fields": {}
+        }
+      ]
+    },
+    "InterestRef": {
+      "fields": {
+        "Value": "InterestsEnum"
+      }
+    },
+    "DepartmentRef": {
+      "extends": ["CollectionReference"],
+      "fields": {}
+    },
+    "Person": {
+      "fields": {
+        "Name": "string",
+        "Category": "injectedCategory",
+        "Birthday": "Date",
+        "SubscribeToNewsletter": "boolean",
+        "SchoolAddress": "Address",
+        "CategorySum": {
+          "fun": "Sum",
+          "args": ["unit", "injectedCategory"]
+        },
+        "Relatives": {
+          "fun": "Tuple",
+          "args": ["injectedCategory", "injectedCategory", "injectedCategory"]
+        }
+      }
+    }
+  },
+  "apis": {
+    "enumOptions": {
+      "colors": "ColorRef",
+      "interests": "InterestRef"
+    },
+    "searchableStreams": {
+      "cities": "CityRef",
+      "departments": "DepartmentRef"
+    },
+    "entities": {
+      "person": {
+        "type": "Person",
+        "methods": ["create", "get", "update", "default"]
+      },
+      "globalConfiguration": {
+        "type": "GlobalConfiguration",
+        "methods": ["get"]
+      }
+    }
+  },
+  "forms": {
+    "address": {
+      "type": "Address",
+      "renderer": "address",
+      "fields": {
+        "Street": {
+          "label": "street",
+          "renderer": "defaultString",
+          "visible": true
+        },
+        "Town": {
+          "renderer": "defaultString"
+        },
+        "Category": {
+          "renderer": "defaultCategory"
+        },
+        "Number": { "renderer": "defaultNumber" },
+        "SumExample": {
+          "renderer": "defaultSum",
+          "leftRenderer": { "renderer": "defaultUnit" },
+          "rightRenderer": { "renderer": "defaultCategory" }
+        },
+        "TupleExample": {
+          "renderer": "defaultTuple3",
+          "visible": {
+            "kind": "equals",
+            "operands": [
+              {
+                "kind": "fieldLookup",
+                "operands": [
+                  { "kind": "varLookup", "varName": "local" },
+                  "Street"
+                ]
+              },
+              "Bahnhofstrasse"
+            ]
+          },
+          "itemRenderers": [
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" }
+          ]
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "Street",
+                  "Town",
+                  "Number",
+                  "Category",
+                  "SumExample",
+                  "TupleExample"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "person": {
+      "type": "Person",
+      "renderer": "personDetails",
+      "fields": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Category": {
+          "renderer": "defaultCategory"
+        },
+        "Birthday": {
+          "renderer": "defaultDate",
+          "tooltip": "happy Birthday!"
+        },
+        "SubscribeToNewsletter": {
+          "label": "subscribe to newsletter",
+          "renderer": "defaultBoolean"
+        },
+        "SchoolAddress": {
+          "label": "school address",
+          "renderer": "address"
+        },
+        "CategorySum": {
+          "label": "category or string",
+          "renderer": "defaultSum",
+          "leftRenderer": { "renderer": "defaultUnit" },
+          "rightRenderer": { "renderer": "defaultCategory" }
+        },
+        "Relatives": {
+          "label": "relatives",
+          "renderer": "defaultTuple3",
+          "itemRenderers": [
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" }
+          ]
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "demographics": {
+              "groups": {
+                "main": [
+                  "Name",
+                  "Category",
+                  "SubscribeToNewsletter",
+                  "Birthday",
+                  "SchoolAddress",
+                  "CategorySum",
+                  "Relatives"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "person-transparent": {
+      "kind": "passthrough",
+      "form": "person",
+      "configType": "GlobalConfiguration"
+    }
+  }
+}

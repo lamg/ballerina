@@ -77,9 +77,10 @@ export const RendererTraversal = {
           }
         }
         if (traversalContext.forms.has(type.name)) {
+          // Bug here, we should use renderer.renderer instead of type.name
           // this is a form lookup, so "local" changes here to the traversed value
           return rec(
-            type,
+            type, // Bug here, this type needs to be resolved from the types map
             traversalContext.forms.get(type.name)!,
             traversalContext,
           ).Then((valueTraversal: Option<ValueTraversal<T, Res>>) => {
@@ -140,9 +141,11 @@ export const RendererTraversal = {
                 evalContext.traversalIterator.fields;
               return ValueOrErrors.Operations.All(
                 fieldTraversals.flatMap((f) => {
+                  // should be a map and instead of [] a VoE.default.return([]) then an All on this and then a flatmap, everything is returned in a VoE, we do an all and then get a
                   if (f.fieldTraversal.kind == "l") return [];
                   if (f.visibility != undefined) {
                     const visible = Expr.Operations.EvaluateAsBoolean(
+                      // bug here, should be evaulate, not as boolean
                       Map([
                         ["global", evalContext.global],
                         ["local", evalContext.local],

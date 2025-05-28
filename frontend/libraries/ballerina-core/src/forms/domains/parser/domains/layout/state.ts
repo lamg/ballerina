@@ -227,6 +227,25 @@ export const FormLayout = {
       ).Then((calculatedTabs) =>
         ValueOrErrors.Default.return(OrderedMap(calculatedTabs)),
       ),
+    ComputeVisibleFieldsForRecord: (
+      bindings: Bindings,
+      formLayout: PredicateFormLayout,
+    ): ValueOrErrors<Array<FieldName>, string> =>
+      FormLayout.Operations.ComputeLayout(bindings, formLayout).Then(
+        (recordLayout) =>
+          ValueOrErrors.Default.return(
+            recordLayout
+              .valueSeq()
+              .flatMap((tab) =>
+                tab.columns
+                  .valueSeq()
+                  .flatMap((column) =>
+                    column.groups.valueSeq().flatMap((group) => group),
+                  ),
+              )
+              .toArray(),
+          ),
+      ),
   },
 };
 
@@ -280,7 +299,6 @@ export const TableLayout = {
           columns: visibleColumns.columns,
         });
       }
-      console.debug(`Computing visible columns`, visibleColumns.columns);
       return Expr.Operations.Evaluate(bindings)(visibleColumns.columns).Then(
         (result) => {
           if (!PredicateValue.Operations.IsRecord(result)) {
@@ -288,10 +306,6 @@ export const TableLayout = {
               `Invalid visible columns: ${JSON.stringify(result)}`,
             );
           }
-          console.debug(
-            `Computed visible columns ${JSON.stringify(Array.from(result.fields.keys()))}`,
-            result,
-          );
           return ValueOrErrors.Default.return({
             columns: Array.from(result.fields.keys()),
           });
