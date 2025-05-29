@@ -21,6 +21,11 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  TableType,
+  ValueTable,
+  Updater,
+  OrderedMapRepo,
+  unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -29,9 +34,13 @@ import { TableRunner } from "./coroutines/runner";
 const EmbeddedValueInfiniteStreamTemplate =
   ValueInfiniteStreamTemplate.mapContext<
     AbstractTableRendererReadonlyContext & AbstractTableRendererState
-  >((_) => _.customFormState.stream).mapState<AbstractTableRendererState>(
-    AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
-  );
+  >((_) => _.customFormState.stream)
+    .mapState<AbstractTableRendererState>(
+      AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
+    )
+    .mapForeignMutationsFromProps<any>((props) => ({
+      ...props.foreignMutations,
+    }));
 
 export const TableAbstractRenderer = <
   Context extends FormLabel & {
@@ -236,7 +245,9 @@ export const TableAbstractRenderer = <
   return Template.Default<
     AbstractTableRendererReadonlyContext & AbstractTableRendererState,
     AbstractTableRendererState,
-    any,
+    ForeignMutationsExpected & {
+      onChange: DispatchOnChange<ValueTable>;
+    },
     any
   >((props) => {
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
@@ -400,6 +411,70 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
+              add: () => {
+                const delta: DispatchDelta = {
+                  kind: "TableAdd",
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(id, delta);
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              remove: (k: string) => {
+                const delta: DispatchDelta = {
+                  kind: "TableRemove",
+                  id: k,
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(id, delta);
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              moveTo: (k: string, to: number) => {
+                const delta: DispatchDelta = {
+                  kind: "TableMoveTo",
+                  id: k,
+                  to,
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(id, delta);
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              duplicate: (k: string) => {
+                const delta: DispatchDelta = {
+                  kind: "TableDuplicate",
+                  id: k,
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(id, delta);
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
             }}
             TableHeaders={visibleColumns.value.columns}
             EmbeddedTableData={tableData}

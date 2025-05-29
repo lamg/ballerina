@@ -755,7 +755,11 @@ export const PersonConcreteRenderers = {
               <table>
                 <thead style={{ border: "1px solid black" }}>
                   <tr style={{ border: "1px solid black" }}>
-                    <th></th>
+                    <th>
+                      <button onClick={() => props.foreignMutations.add()}>
+                        {"➕"}
+                      </button>
+                    </th>
                     <th>
                       <input
                         type="checkbox"
@@ -777,7 +781,7 @@ export const PersonConcreteRenderers = {
                 <tbody>
                   {props.EmbeddedTableData.entrySeq()
                     .toArray()
-                    .map(([id, row]) => (
+                    .map(([id, row], idx) => (
                       <tr style={{ border: "1px solid black" }}>
                         <button
                           onClick={() =>
@@ -794,6 +798,32 @@ export const PersonConcreteRenderers = {
                             ? "🙉"
                             : "🙈"}
                         </button>
+                        <button
+                          onClick={() => props.foreignMutations.remove(id)}
+                        >
+                          {"❌"}
+                        </button>
+                        <button
+                          onClick={() => props.foreignMutations.duplicate(id)}
+                        >
+                          {"👥"}
+                        </button>
+                        <select
+                          onChange={(_) =>
+                            props.foreignMutations.moveTo(
+                              id,
+                              Number(_.currentTarget.value),
+                            )
+                          }
+                        >
+                          {props.EmbeddedTableData.entrySeq().map(
+                            (_, optIdx) => (
+                              <option key={_[0]} selected={optIdx === idx}>
+                                {optIdx}
+                              </option>
+                            ),
+                          )}
+                        </select>
                         <td style={{ border: "1px solid black" }}>
                           <input
                             type="checkbox"
