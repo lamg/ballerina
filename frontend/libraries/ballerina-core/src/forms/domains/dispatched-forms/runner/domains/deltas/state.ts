@@ -205,7 +205,7 @@ export type DispatchDeltaTable =
   | {
       kind: "TableMoveTo";
       id: string;
-      to: number;
+      to: string;
       type: DispatchParsedType<any>;
     }
   | {
@@ -320,10 +320,10 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
         Item2: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
       };
     }
-  | { Discriminator: "TableAdd" }
-  | { Discriminator: "TableRemove"; Remove: string }
-  | { Discriminator: "TableDuplicate"; Dup: string }
-  | { Discriminator: "TableMoveTo"; Move: string; To: number };
+  | { Discriminator: "TableAddEmpty" }
+  | { Discriminator: "TableRemoveAt"; RemoveAt: string }
+  | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
+  | { Discriminator: "TableMoveFromTo"; MoveFromTo: [string, string] };
 
 export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferPrimitive
@@ -1131,9 +1131,9 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableAdd",
+                Discriminator: "TableAddEmpty",
               },
-              `[TableAdd]`,
+              `[TableAddEmpty]`,
               delta.isWholeEntityMutation,
             ]);
           }
@@ -1147,10 +1147,10 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableRemove",
-                Remove: delta.id,
+                Discriminator: "TableRemoveAt",
+                RemoveAt: delta.id,
               },
-              `[TableRemove][${delta.id}]`,
+              `[TableRemoveAt][${delta.id}]`,
               delta.isWholeEntityMutation,
             ]);
           }
@@ -1164,10 +1164,10 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableDuplicate",
-                Dup: delta.id,
+                Discriminator: "TableDuplicateAt",
+                DuplicateAt: delta.id,
               },
-              `[TableDuplicate][${delta.id}]`,
+              `[TableDuplicateAt][${delta.id}]`,
               delta.isWholeEntityMutation,
             ]);
           }
@@ -1181,11 +1181,10 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableMoveTo",
-                Move: delta.id,
-                To: delta.to,
+                Discriminator: "TableMoveFromTo",
+                MoveFromTo: [delta.id, delta.to],
               },
-              `[TableMoveTo][${delta.id}][${delta.to}]`,
+              `[TableMoveFromTo][${delta.id}][${delta.to}]`,
               delta.isWholeEntityMutation,
             ]);
           }
