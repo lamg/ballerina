@@ -194,7 +194,7 @@ export type DispatchDeltaTable =
       tableType: DispatchParsedType<any>;
     }
   | {
-      kind: "TableAdd";
+      kind: "TableAddEmpty";
       type: DispatchParsedType<any>;
     }
   | {
@@ -323,7 +323,10 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
   | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
-  | { Discriminator: "TableMoveFromTo"; MoveFromTo: [string, string] };
+  | {
+      Discriminator: "TableMoveFromTo";
+      MoveFromTo: [string, string];
+    };
 
 export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferPrimitive
@@ -1134,7 +1137,7 @@ export const DispatchDeltaTransfer = {
               ]),
             );
           }
-          if (delta.kind == "TableAdd") {
+          if (delta.kind == "TableAddEmpty") {
             return ValueOrErrors.Default.return<
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
