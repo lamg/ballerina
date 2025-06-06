@@ -23,13 +23,10 @@ import {
   getLeafIdentifierFromIdentifier,
   TableType,
   ValueTable,
-  Updater,
-  OrderedMapRepo,
-  unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
-import { TableRunner } from "./coroutines/runner";
+import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
 
 const EmbeddedValueInfiniteStreamTemplate =
   ValueInfiniteStreamTemplate.mapContext<
@@ -267,7 +264,7 @@ export const TableAbstractRenderer = <
       );
     }
 
-    if (!props.context.customFormState.isInitialized) {
+    if (props.context.customFormState.initializationStatus !== "initialized") {
       return <></>;
     }
 
@@ -420,6 +417,10 @@ export const TableAbstractRenderer = <
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                      true,
+                    ),
                   ),
                 );
               },
@@ -427,13 +428,17 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableRemove",
                   id: k,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
+                    ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                      true,
                     ),
                   ),
                 );
@@ -443,13 +448,17 @@ export const TableAbstractRenderer = <
                   kind: "TableMoveTo",
                   id: k,
                   to,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
+                    ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                      true,
                     ),
                   ),
                 );
@@ -458,13 +467,17 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableDuplicate",
                   id: k,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
+                    ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                      true,
                     ),
                   ),
                 );
@@ -477,5 +490,9 @@ export const TableAbstractRenderer = <
         </IdProvider>
       </>
     );
-  }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
+  }).any([
+    TableRunner,
+    TableReinitialiseRunner,
+    EmbeddedValueInfiniteStreamTemplate,
+  ]);
 };
