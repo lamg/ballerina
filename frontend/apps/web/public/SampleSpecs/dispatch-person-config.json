@@ -53,11 +53,25 @@
         }
       ]
     },
-    "User": {
+    "Identifiable": {
       "fields": {
-        "Id": "string",
-        "Name": "string",
-        "Surname": "string",
+        "Id": "string"
+      }
+    },
+    "Named": {
+      "fields": {
+        "Name": "string"
+      }
+    },
+    "FullNamed": {
+      "extends": ["Named"],
+      "fields": {
+        "Surname": "string"
+      }
+    },
+    "User": {
+      "extends": ["FullNamed", "Identifiable"],
+      "fields": {
         "Birthday": "Date",
         "Email": "string",
         "SubscribeToNewsletter": "boolean",
@@ -140,46 +154,22 @@
         }
       ]
     },
+    "AddressFields": {
+      "fields": {
+        "Departments": "boolean",
+        "SchoolAddress": "boolean",
+        "MainAddress": "boolean",
+        "AddressesAndAddressesWithLabel": "boolean",
+        "AddressesWithColorLabel": "boolean",
+        "AddressesBy": "boolean",
+        "Permissions": "boolean",
+        "CityByDepartment": "boolean",
+        "Holidays": "boolean"
+      }
+    },
     "AddressesFieldsEnum": {
-      "fun": "Union",
-      "args": [
-        {
-          "caseName": "Departments",
-          "fields": {}
-        },
-        {
-          "caseName": "SchoolAddress",
-          "fields": {}
-        },
-        {
-          "caseName": "MainAddress",
-          "fields": {}
-        },
-        {
-          "caseName": "AddressesAndAddressesWithLabel",
-          "fields": {}
-        },
-        {
-          "caseName": "AddressesWithColorLabel",
-          "fields": {}
-        },
-        {
-          "caseName": "AddressesBy",
-          "fields": {}
-        },
-        {
-          "caseName": "Permissions",
-          "fields": {}
-        },
-        {
-          "caseName": "CityByDepartment",
-          "fields": {}
-        },
-        {
-          "caseName": "Holidays",
-          "fields": {}
-        }
-      ]
+      "fun": "KeyOf",
+      "args": ["AddressFields"]
     },
     "AddressesFieldRef": {
       "fields": {
@@ -945,6 +935,7 @@
       "renderer": "personDetails",
       "fields": {
         "Friends": {
+          "label": "Friends",
           "renderer": {
             "type": "User",
             "renderer": "streamingTable",
@@ -1040,6 +1031,7 @@
           "api": "ActiveUsersApi"
         },
         "Children": {
+          "label": "Children",
           "renderer": {
             "type": "User",
             "renderer": "streamingTable",
