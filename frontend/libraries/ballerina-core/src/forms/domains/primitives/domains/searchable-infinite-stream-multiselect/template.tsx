@@ -1,4 +1,4 @@
-import { Map, OrderedMap } from "immutable";
+import { OrderedMap } from "immutable";
 import {
   SimpleCallback,
   Debounce,
@@ -12,7 +12,6 @@ import {
   PredicateValue,
   Delta,
   ParsedType,
-  ParsedApplicationType,
 } from "../../../../../../main";
 import { CoTypedFactory } from "../../../../../coroutines/builder";
 import { Debounced } from "../../../../../debounced/state";

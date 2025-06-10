@@ -64,7 +64,7 @@ import {
   ValueOption,
 } from "ballerina-core";
 import { CategoryAbstractRendererView } from "../injected-forms/category";
-import { Map } from "immutable";
+import { Map, OrderedMap } from "immutable";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
 
@@ -1379,6 +1379,25 @@ export const PersonConcreteRenderers = {
                     );
                   })}
                 </ul>
+                <button
+                  disabled={props.context.disabled}
+                  onClick={() =>
+                    props.foreignMutations.replace(
+                      PredicateValue.Default.record(
+                        OrderedMap(
+                          props.context.availableOptions
+                            .slice(0, 2)
+                            .map((opt) => [
+                              opt.Id,
+                              ValueRecord.Default.fromJSON(opt),
+                            ]),
+                        ),
+                      ),
+                    )
+                  }
+                >
+                  select first 2
+                </button>
               </>
             )}
             <button

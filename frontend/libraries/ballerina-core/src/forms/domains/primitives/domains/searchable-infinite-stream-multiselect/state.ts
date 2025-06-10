@@ -1,5 +1,4 @@
-import { OrderedMap } from "immutable";
-import { Guid, SimpleCallback, ValueRecord } from "../../../../../../main";
+import { SimpleCallback, ValueRecord } from "../../../../../../main";
 import { View } from "../../../../../template/state";
 import { Value } from "../../../../../value/state";
 import { CollectionReference } from "../../../collection/domains/reference/state";
