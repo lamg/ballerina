@@ -344,21 +344,55 @@ export const TableAbstractRenderer = <
               .filter((_, column) =>
                 visibleColumns.value.columns.includes(column),
               )
-              .map((_, column) => {
-                const result = EmbeddedCellTemplates.get(column);
-                if (result == undefined) {
+              .flatMap((_, column) => {
+                const EmbeddedCell = EmbeddedCellTemplates.get(column);
+                if (EmbeddedCell == undefined) {
                   console.error(
-                    "Visible column defined which is not in column renderers",
-                    column,
+                    `Cannot find column ${column} in fields ${rowData.fields.keySeq().toArray()}, this is likely due to a mismatch between the data we are trying to parse and the specs.`,
                   );
-                  // TODO -- better error handling
+                  return [];
                 }
-                return EmbeddedCellTemplates.get(column)!(chunkIndex)(rowId)(
-                  rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column));
+                return [
+                  [
+                    column,
+                    EmbeddedCell(chunkIndex)(rowId)(
+                      rowData.fields.get(column)!,
+                    )(disabledColumnKeysSet.has(column)),
+                  ],
+                ];
               }),
           ),
       );
+
+    // don't send to the renderer columns which do not exist in the embedded type
+    const validColumns: ValueOrErrors<string[], string> =
+      props.context.type.kind !== "table"
+        ? ValueOrErrors.Default.throwOne(
+            `"TableType" expected but got ${props.context.type.kind} when parsing table type valid columns`,
+          )
+        : props.context.type.args[0].kind !== "record"
+          ? ValueOrErrors.Default.throwOne(
+              `"RecordType" expected but got ${props.context.type.args[0].kind} when parsing table type valid columns`,
+            )
+          : ValueOrErrors.Default.return(
+              props.context.type.args[0].fields.keySeq().toArray(),
+            );
+
+    if (validColumns.kind == "errors") {
+      console.error(validColumns.errors.toArray().join("\n"));
+
+      return (
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Error while parsing type`}
+        />
+      );
+    }
+
+    const validVisibleColumns = visibleColumns.value.columns.filter(
+      (_) => !validColumns.value.length || validColumns.value.includes(_),
+    );
 
     return (
       <>
@@ -501,7 +535,7 @@ export const TableAbstractRenderer = <
                     );
                   },
             }}
-            TableHeaders={visibleColumns.value.columns}
+            TableHeaders={validVisibleColumns}
             ColumnLabels={ColumnLabels}
             EmbeddedTableData={tableData}
             DetailsRenderer={embedDetailsRenderer}
