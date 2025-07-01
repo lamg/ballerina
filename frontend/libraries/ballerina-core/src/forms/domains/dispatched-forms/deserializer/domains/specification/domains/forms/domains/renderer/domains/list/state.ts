@@ -1,19 +1,16 @@
 import { List, Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   ListType,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
-import {
-  NestedRenderer,
-  SerializedNestedRenderer,
-} from "../nestedRenderer/state";
-import { Renderer, SerializedRenderer } from "../../state";
+import { NestedRenderer } from "../nestedRenderer/state";
 
 export type SerializedListRenderer = {
-  renderer: unknown;
+  renderer: string;
   elementRenderer: unknown;
   actions: unknown;
 };
@@ -31,13 +28,13 @@ export const ListMethods = {
   Operations: {
     fromRawValue: (value: unknown): ValueOrErrors<ListMethods, string> =>
       typeof value === "undefined"
-        ? ValueOrErrors.Default.return([] as ListMethods)
+        ? ValueOrErrors.Default.return([])
         : typeof value !== "object" || value == null
           ? ValueOrErrors.Default.throwOne(
               `expected an object for list methods, got ${typeof value}`,
             )
           : Object.keys(value).length == 0
-            ? ValueOrErrors.Default.return([] as ListMethods)
+            ? ValueOrErrors.Default.return([])
             : Object.keys(value).find(
                   (_) => !ListMethod[_ as keyof typeof ListMethod],
                 )
@@ -52,7 +49,7 @@ export const ListMethods = {
 
 export type ListRenderer<T> = {
   kind: "listRenderer";
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   elementRenderer: NestedRenderer<T>;
   type: ListType<T>;
   methods: Array<ListMethod>;
@@ -61,22 +58,22 @@ export type ListRenderer<T> = {
 export const ListRenderer = {
   Default: <T>(
     type: ListType<T>,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
     elementRenderer: NestedRenderer<T>,
     methods?: ListRenderer<T>["methods"],
   ): ListRenderer<T> => ({
     kind: "listRenderer",
     type,
-    renderer,
+    concreteRenderer,
     elementRenderer,
     methods: methods ?? [],
   }),
   Operations: {
     hasRenderers: (
       serialized: unknown,
-    ): serialized is SerializedListRenderer & {
-      renderer: SerializedRenderer;
-      elementRenderer: SerializedNestedRenderer;
+    ): serialized is object & {
+      renderer: string;
+      elementRenderer: unknown;
     } =>
       isObject(serialized) &&
       "renderer" in serialized &&
@@ -86,8 +83,8 @@ export const ListRenderer = {
       type: DispatchParsedType<T>,
     ): ValueOrErrors<
       Omit<SerializedListRenderer, "renderer" | "elementRenderer"> & {
-        renderer: SerializedRenderer;
-        elementRenderer: SerializedNestedRenderer;
+        renderer: string;
+        elementRenderer: unknown;
       },
       string
     > =>
@@ -97,12 +94,25 @@ export const ListRenderer = {
           ? ValueOrErrors.Default.throwOne(
               `renderer and elementRenderer are required`,
             )
-          : ValueOrErrors.Default.return(serialized),
-
-    Deserialize: <T>(
+          : ValueOrErrors.Default.return({
+              actions: "actions" in serialized ? serialized.actions : [],
+              renderer: serialized.renderer,
+              elementRenderer: serialized.elementRenderer,
+            }),
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: ListType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<ListRenderer<T>, string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)
@@ -114,22 +124,15 @@ export const ListRenderer = {
             "list element",
             types,
           ).Then((elementRenderer) =>
-            Renderer.Operations.Deserialize(
-              type,
-              serializedRenderer.renderer,
-              concreteRenderers,
-              types,
-            ).Then((renderer) =>
-              ListMethods.Operations.fromRawValue(
-                serializedRenderer.actions,
-              ).Then((methods) =>
-                ValueOrErrors.Default.return(
-                  ListRenderer.Default(
-                    type,
-                    renderer,
-                    elementRenderer,
-                    methods,
-                  ),
+            ListMethods.Operations.fromRawValue(
+              serializedRenderer.actions,
+            ).Then((methods) =>
+              ValueOrErrors.Default.return(
+                ListRenderer.Default(
+                  type,
+                  serializedRenderer.renderer,
+                  elementRenderer,
+                  methods,
                 ),
               ),
             ),

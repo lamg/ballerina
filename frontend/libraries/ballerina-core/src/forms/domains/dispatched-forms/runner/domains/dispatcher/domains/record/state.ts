@@ -1,4 +1,4 @@
-import { List, Map } from "immutable";
+import { List, Map, OrderedMap } from "immutable";
 import {
   Expr,
   RecordType,
@@ -7,38 +7,62 @@ import {
   Template,
   MapRepo,
   RecordAbstractRenderer,
+  DispatchInjectablesTypes,
+  RecordAbstractRendererView,
+  StringSerializedType,
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
-import { Renderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/state";
 
 export const RecordDispatcher = {
   Operations: {
     GetRecordConcreteRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
     >(
-      renderer: Renderer<T> | undefined,
-      dispatcherContext: DispatcherContext<T>,
+      concreteRenderer: string | undefined,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       isNested: boolean,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer != undefined && renderer.kind != "lookupRenderer"
-        ? ValueOrErrors.Default.throwOne(
-            "expected renderer.kind == 'lookupRenderer' but got " +
-              renderer.kind,
+    ): ValueOrErrors<
+      RecordAbstractRendererView<
+        CustomPresentationContexts,
+        Flags,
+        ExtraContext
+      >,
+      string
+    > =>
+      concreteRenderer == undefined
+        ? ValueOrErrors.Default.return(
+            dispatcherContext.getDefaultRecordRenderer(isNested),
           )
-        : dispatcherContext.getConcreteRenderer(
-            "record",
-            renderer?.renderer,
-            isNested,
-          ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      type: RecordType<T>,
+        : dispatcherContext.getConcreteRenderer("record", concreteRenderer),
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: RecordRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       isNested: boolean,
-      formName?: string,
-      launcherName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       ValueOrErrors.Operations.All(
         List<
           ValueOrErrors<
@@ -51,6 +75,7 @@ export const RecordDispatcher = {
                 label?: string;
                 GetDefaultState: () => any;
               },
+              StringSerializedType,
             ],
             string
           >
@@ -61,7 +86,7 @@ export const RecordDispatcher = {
             .map(([fieldName, fieldRenderer]) => {
               const res = MapRepo.Operations.tryFindWithError(
                 fieldName,
-                type.fields,
+                renderer.type.fields,
                 () => `cannot find field "${fieldName}" in types`,
               );
 
@@ -70,7 +95,9 @@ export const RecordDispatcher = {
                   fieldName,
                   fieldRenderer,
                   dispatcherContext,
-                ).Then((template) =>
+                  isInlined,
+                  tableApi,
+                ).Then(([template, serializedType]) =>
                   dispatcherContext
                     .defaultState(fieldType, fieldRenderer.renderer)
                     .Then((defaultState) =>
@@ -83,6 +110,7 @@ export const RecordDispatcher = {
                           label: fieldRenderer.label,
                           GetDefaultState: () => defaultState,
                         },
+                        serializedType,
                       ]),
                     ),
                 ),
@@ -92,47 +120,43 @@ export const RecordDispatcher = {
       )
         .Then((fieldTemplates) =>
           RecordDispatcher.Operations.GetRecordConcreteRenderer(
-            renderer.renderer,
+            renderer.concreteRenderer,
             dispatcherContext,
             isNested,
-          ).Then((concreteRenderer) =>
-            !isNested && launcherName == undefined
-              ? ValueOrErrors.Default.throwOne<
-                  Template<any, any, any, any>,
-                  string
-                >(
-                  "internal error: launcherName is required for top level forms",
-                )
-              : formName == undefined
-                ? ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
-                    string
-                  >("internal error: formName is required for all forms")
-                : ValueOrErrors.Default.return(
-                    RecordAbstractRenderer(
-                      Map(fieldTemplates),
-                      renderer.tabs,
-                      dispatcherContext.IdProvider,
-                      dispatcherContext.ErrorRenderer,
-                      renderer.isInlined,
-                    )
-                      .mapContext((_: any) => ({
-                        ..._,
-                        type: renderer.type,
-                        ...(!isNested && launcherName
-                          ? {
-                              identifiers: {
-                                // withLauncher: `[${launcherName}][${formName}]`,
-                                // withoutLauncher: `[${formName}]`,
-                                withLauncher: `[${type.name}]`,
-                                withoutLauncher: `[${type.name}]`,
-                              },
-                            }
-                          : {}),
-                      }))
-                      .withView(concreteRenderer),
-                  ),
-          ),
+          ).Then((concreteRenderer) => {
+            const serializedType = RecordType.SerializeToString(
+              OrderedMap(
+                fieldTemplates
+                  .toArray()
+                  .map((template) => [template[0], template[2]]),
+              ),
+            );
+            return ValueOrErrors.Default.return<
+              [Template<any, any, any, any>, StringSerializedType],
+              string
+            >([
+              RecordAbstractRenderer<
+                CustomPresentationContexts,
+                Flags,
+                ExtraContext
+              >(
+                Map(
+                  fieldTemplates.map((template) => [template[0], template[1]]),
+                ),
+                renderer.tabs,
+                dispatcherContext.IdProvider,
+                dispatcherContext.ErrorRenderer,
+                isInlined,
+                serializedType,
+              )
+                .mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                }))
+                .withView(concreteRenderer),
+              serializedType,
+            ]);
+          }),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When dispatching as record form`),

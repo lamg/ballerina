@@ -15,14 +15,20 @@ import {
   EditFormWritableState,
   EditFormContext,
   EditFormForeignMutationsExpected,
-  FormLayout,
   RecordAbstractRendererView,
+  LookupTypeAbstractRendererView,
 } from "ballerina-core";
+import {
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext,
+  DispatchPassthroughFormFlags,
+} from "./concrete-renderers";
 
-export const DispatchPersonContainerFormView: RecordAbstractRendererView<
-  { layout: FormLayout },
-  Unit
-> = (props) => {
+export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext
+> = () => (props) => {
   return (
     <>
       <table>
@@ -46,7 +52,7 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
                       <>
                         {/* <>{console.debug("fieldName", fieldName)}</> */}
                         <td style={{ display: "block" }}>
-                          {props.EmbeddedFields.get(fieldName)!({
+                          {props.EmbeddedFields.get(fieldName)!(undefined)({
                             ...props,
                             context: {
                               ...props.context,
@@ -67,10 +73,11 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
   );
 };
 
-export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
-  { layout: FormLayout },
-  Unit
-> = (props) => {
+export const DispatchPersonNestedContainerFormView: () => RecordAbstractRendererView<
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext
+> = () => (props) => {
   return (
     <>
       {/* {props.context.label && <h3>{props.context.label}</h3>} */}
@@ -87,7 +94,7 @@ export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
                     )
                     .map((fieldName) => (
                       <td style={{ display: "block" }}>
-                        {props.EmbeddedFields.get(fieldName)!({
+                        {props.EmbeddedFields.get(fieldName)!(undefined)({
                           ...props,
                           context: {
                             ...props.context,
@@ -103,6 +110,21 @@ export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
           )}
         </tbody>
       </table>
+    </>
+  );
+};
+
+export const DispatchPersonLookupTypeRenderer: () => LookupTypeAbstractRendererView<
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext
+> = () => (props) => {
+  return (
+    <>
+      {props.embeddedTemplate({
+        ...props,
+        view: unit,
+      })}
     </>
   );
 };
