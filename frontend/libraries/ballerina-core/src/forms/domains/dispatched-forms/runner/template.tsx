@@ -65,6 +65,7 @@ export const DispatchFormRunnerTemplate = <
         context={{
           ...props.context.formState,
           value: entity.value.value,
+          locked: false,
           disabled: false,
           bindings,
           extraContext: props.context.extraContext,

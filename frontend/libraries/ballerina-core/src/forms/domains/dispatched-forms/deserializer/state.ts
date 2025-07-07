@@ -129,23 +129,48 @@ export type DispatcherContext<
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
 };
 
+export type DeserializedDispatchSpecification<
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
+  ExtraContext = Unit,
+> = {
+  launchers: DispatchParsedLaunchers<T>;
+  dispatcherContext: DispatcherContext<
+    T,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext
+  >;
+  parseValueToApi: (
+    value: PredicateValue,
+    type: DispatchParsedType<T>,
+    state: any,
+  ) => ValueOrErrors<any, string>;
+  parseEntityFromApiByTypeLookupName: (
+    typeLookupName: string,
+    _: any,
+  ) => ValueOrErrors<PredicateValue, string>;
+  getTypeByLookupName: (
+    typeLookupName: string,
+  ) => ValueOrErrors<DispatchParsedType<T>, string>;
+};
+
 export type DispatchSpecificationDeserializationResult<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
   CustomPresentationContexts = Unit,
   ExtraContext = Unit,
 > = ValueOrErrors<
-  {
-    launchers: DispatchParsedLaunchers<T>;
-    dispatcherContext: DispatcherContext<
-      T,
-      Flags,
-      CustomPresentationContexts,
-      ExtraContext
-    >;
-  },
+  DeserializedDispatchSpecification<
+    T,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext
+  >,
   string
 >;
+
 export type DispatchEnumName = string;
 export type DispatchEnumOptionsSources = BasicFun<
   DispatchEnumName,
@@ -363,6 +388,40 @@ export const parseDispatchFormsToLaunchers =
             IdProvider,
             ErrorRenderer,
           },
+          parseEntityFromApiByTypeLookupName: (
+            typeLookupName: string,
+            raw: any,
+          ) =>
+            MapRepo.Operations.tryFindWithError(
+              typeLookupName,
+              specification.types,
+              () =>
+                `cannot find type "${typeLookupName}" when parsing launchers`,
+            ).Then((type) =>
+              dispatchFromAPIRawValue(
+                type,
+                specification.types,
+                apiConverters,
+                injectedPrimitives,
+              )(raw),
+            ),
+          parseValueToApi: (
+            value: PredicateValue,
+            type: DispatchParsedType<T>,
+            state: any,
+          ) =>
+            dispatchToAPIRawValue(
+              type,
+              specification.types,
+              apiConverters,
+              injectedPrimitives,
+            )(value, state),
+          getTypeByLookupName: (typeLookupName: string) =>
+            MapRepo.Operations.tryFindWithError(
+              typeLookupName,
+              specification.types,
+              () => `cannot find type "${typeLookupName}" in types`,
+            ),
         }),
       )
       .MapErrors((errors) =>

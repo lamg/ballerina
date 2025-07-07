@@ -15,6 +15,7 @@ export type CommonAbstractRendererReadonlyContext<
   ExtraContext = Unit,
 > = {
   value: V;
+  locked: boolean;
   disabled: boolean;
   bindings: Bindings;
   extraContext: ExtraContext;
@@ -25,12 +26,11 @@ export type CommonAbstractRendererReadonlyContext<
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
-  serializedTypeHierarchy: string[];
+  typeAncestors: DispatchParsedType<any>[];
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {
   domNodeId: string;
-  completeSerializedTypeHierarchy: string[];
 };
 
 export type CommonAbstractRendererState = {

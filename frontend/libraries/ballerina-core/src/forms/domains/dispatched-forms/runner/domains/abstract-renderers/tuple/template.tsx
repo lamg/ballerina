@@ -51,7 +51,6 @@ export const DispatchTupleAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const embeddedItemTemplates =
     (itemIndex: number) => (flags: Flags | undefined) =>
@@ -69,16 +68,17 @@ export const DispatchTupleAbstractRenderer = <
               ItemFormStates.get(itemIndex)!()),
             value: _.value.values.get(itemIndex)!,
             disabled: _.disabled,
+            locked: _.locked,
             bindings: _.bindings,
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             customPresentationContext: _.customPresentationContext,
             type: _.type.args[itemIndex],
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
-            ),
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
+            ),
           }),
         )
         .mapState(
@@ -158,21 +158,17 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererForeignMutationsExpected<Flags>,
     TupleAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[tuple]";
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering tuple field\n...${SerializedType}`,
+        )}\n...When rendering tuple field\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Tuple value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Tuple value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -187,7 +183,6 @@ export const DispatchTupleAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
