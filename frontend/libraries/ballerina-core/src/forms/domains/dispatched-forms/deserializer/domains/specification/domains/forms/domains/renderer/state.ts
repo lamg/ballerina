@@ -11,6 +11,10 @@ import { LookupRenderer, SerializedLookup } from "./domains/lookup/state";
 import { MapRenderer, SerializedMapRenderer } from "./domains/map/state";
 import { OneRenderer, SerializedOneRenderer } from "./domains/one/state";
 import {
+  ReadOnlyRenderer,
+  SerializedReadOnlyRenderer,
+} from "./domains/readOnly/state";
+import {
   SerializedStreamRenderer,
   StreamRenderer,
 } from "./domains/stream/state";
@@ -45,6 +49,7 @@ export type SerializedRenderer =
   | SerializedListRenderer
   | SerializedMapRenderer
   | SerializedOneRenderer
+  | SerializedReadOnlyRenderer
   | SerializedStreamRenderer
   | SerializedSumRenderer
   | SerializedSumUnitDateBaseRenderer
@@ -60,6 +65,7 @@ export type Renderer<T> =
   | ListRenderer<T>
   | MapRenderer<T>
   | OneRenderer<T>
+  | ReadOnlyRenderer<T>
   | StreamRenderer<T>
   | SumRenderer<T>
   | BaseSumUnitDateRenderer<T>
@@ -248,50 +254,57 @@ export const Renderer = {
                             concreteRenderers,
                             types,
                           )
-                        : Renderer.Operations.IsSumUnitDate(
-                              serialized,
-                              concreteRenderers,
-                            ) && type.kind == "sum"
-                          ? BaseSumUnitDateRenderer.Operations.Deserialize(
+                        : type.kind == "readOnly"
+                          ? ReadOnlyRenderer.Operations.Deserialize(
                               type,
                               serialized,
+                              concreteRenderers,
+                              types,
                             )
-                          : type.kind == "sum"
-                            ? SumRenderer.Operations.Deserialize(
-                                type,
+                          : Renderer.Operations.IsSumUnitDate(
                                 serialized,
                                 concreteRenderers,
-                                types,
+                              ) && type.kind == "sum"
+                            ? BaseSumUnitDateRenderer.Operations.Deserialize(
+                                type,
+                                serialized,
                               )
-                            : type.kind == "record"
-                              ? RecordRenderer.Operations.Deserialize(
+                            : type.kind == "sum"
+                              ? SumRenderer.Operations.Deserialize(
                                   type,
                                   serialized,
                                   concreteRenderers,
                                   types,
                                 )
-                              : type.kind == "union"
-                                ? UnionRenderer.Operations.Deserialize(
+                              : type.kind == "record"
+                                ? RecordRenderer.Operations.Deserialize(
                                     type,
                                     serialized,
                                     concreteRenderers,
                                     types,
                                   )
-                                : type.kind == "tuple"
-                                  ? TupleRenderer.Operations.Deserialize(
+                                : type.kind == "union"
+                                  ? UnionRenderer.Operations.Deserialize(
                                       type,
                                       serialized,
                                       concreteRenderers,
                                       types,
                                     )
-                                  : ValueOrErrors.Default.throwOne<
-                                      Renderer<T>,
-                                      string
-                                    >(
-                                      `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
-                                        type.kind
-                                      }`,
-                                    );
+                                  : type.kind == "tuple"
+                                    ? TupleRenderer.Operations.Deserialize(
+                                        type,
+                                        serialized,
+                                        concreteRenderers,
+                                        types,
+                                      )
+                                    : ValueOrErrors.Default.throwOne<
+                                        Renderer<T>,
+                                        string
+                                      >(
+                                        `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
+                                          type.kind
+                                        }`,
+                                      );
       },
   },
 };

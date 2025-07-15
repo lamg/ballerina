@@ -35,6 +35,7 @@ import {
   RecordAbstractRendererView,
   SearchableInfiniteStreamMultiselectAbstractRendererView,
   OneAbstractRendererView,
+  ReadOnlyAbstractRendererView,
   TableAbstractRendererView,
   UnionAbstractRendererView,
   DispatchInjectablesTypes,
@@ -71,6 +72,7 @@ import {
   SecretAbstractRendererState,
   SecretAbstractRendererView,
 } from "../runner/domains/abstract-renderers/secret/state";
+import { ReadOnlyAbstractRendererState } from "../runner/domains/abstract-renderers/readOnly/state";
 import {
   MapAbstractRendererState,
   MapAbstractRendererView,
@@ -158,6 +160,7 @@ export const DispatchGenericTypes = [
   "KeyOf",
   "Table",
   "One",
+  "ReadOnly",
 ] as const;
 export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
 
@@ -182,6 +185,7 @@ type BuiltInApiConverters = {
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
   One: ApiConverter<ValueOption>;
+  ReadOnly: ApiConverter<any>;
 };
 
 export type ConcreteRenderers<
@@ -474,6 +478,21 @@ export type ConcreteRenderers<
           >
         >;
   };
+  readOnly: {
+    [_: string]: () =>
+      | ReadOnlyAbstractRendererView<
+          CustomPresentationContexts,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          ReadOnlyAbstractRendererView<
+            CustomPresentationContexts,
+            Flags,
+            ExtraContext
+          >
+        >;
+  };
 } & {
   [key in keyof T]: { [_: string]: () => T[key]["view"] };
 };
@@ -488,6 +507,7 @@ export type ConcreteRenderer<T> =
   | MapAbstractRendererView<any, any>
   | NumberAbstractRendererView<any, any>
   | OneAbstractRendererView<any, any>
+  | ReadOnlyAbstractRendererView<any, any>
   | RecordAbstractRendererView<any, any>
   | SearchableInfiniteStreamAbstractRendererView<any, any>
   | SearchableInfiniteStreamMultiselectAbstractRendererView<any, any>
@@ -878,6 +898,27 @@ export const dispatchDefaultState =
                         ),
                 );
 
+      if (t.kind == "readOnly")
+        return renderer.kind != "readOnlyRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non readOnly renderer kind "${renderer.kind}" when resolving defaultState for readOnly`,
+            )
+          : dispatchDefaultState(
+              infiniteStreamSources,
+              injectedPrimitives,
+              types,
+              forms,
+              converters,
+              lookupSources,
+              tableApiSources,
+            )(t.arg, renderer.childRenderer.renderer).Then((childState) =>
+              ValueOrErrors.Default.return(
+                ReadOnlyAbstractRendererState.Default.childFormState(
+                  childState,
+                ),
+              ),
+            );
+
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
@@ -1149,6 +1190,22 @@ export const dispatchDefaultValue =
             )
           : ValueOrErrors.Default.throwOne(
               `received non one renderer kind "${renderer.kind}" when resolving defaultValue for one`,
+            );
+      }
+
+      if (t.kind == "readOnly") {
+        return renderer.kind == "readOnlyRenderer"
+          ? dispatchDefaultValue(
+              injectedPrimitives,
+              types,
+              forms,
+            )(t.arg, renderer.childRenderer.renderer).Then((childValue) =>
+              ValueOrErrors.Default.return(
+                PredicateValue.Default.readonly(childValue),
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non readOnly renderer kind "${renderer.kind}" when resolving defaultValue for readOnly`,
             );
       }
 
@@ -1476,6 +1533,16 @@ export const dispatchFromAPIRawValue =
             PredicateValue.Default.option(true, value),
           ),
         );
+      }
+
+      if (t.kind == "readOnly") {
+        const readOnlyResult = converters["ReadOnly"].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.arg,
+          types,
+          converters,
+          injectedPrimitives,
+        )(readOnlyResult.ReadOnly);
       }
 
       // TODO -- this can be more functional
@@ -1904,6 +1971,27 @@ export const dispatchToAPIRawValue =
               ]),
             );
           },
+        );
+      }
+
+      if (t.kind == "readOnly") {
+        if (!PredicateValue.Operations.IsReadOnly(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `ReadOnly expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.arg,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.ReadOnly, formState).Then((childValue) =>
+          ValueOrErrors.Default.return(
+            converters["ReadOnly"].toAPIRawValue([
+              { ReadOnly: childValue },
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
         );
       }
 

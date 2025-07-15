@@ -368,6 +368,19 @@
           "args": ["string", "string"]
         },
         "Birthday": "Date",
+        "SuperSecretNumber": {
+          "fun": "ReadOnly",
+          "args": ["number"]
+        },
+        "MoreSecretNumbers": {
+          "fun": "List",
+          "args": [
+            {
+              "fun": "ReadOnly",
+              "args": ["number"]
+            }
+          ]
+        },
         "SubscribeToNewsletter": "boolean",
         "FavoriteColor": {
           "fun": "SingleSelection",
@@ -520,7 +533,13 @@
         },
         "FriendsAddresses": {
           "fun": "Map",
-          "args": ["string", { "fun": "List", "args": ["Address"] }]
+          "args": [
+            "string",
+            {
+              "fun": "List",
+              "args": ["Address"]
+            }
+          ]
         },
         "Friends": {
           "fun": "Table",
@@ -1185,6 +1204,24 @@
           "label": "Category",
           "renderer": "defaultCategory"
         },
+        "SuperSecretNumber": {
+          "renderer": "ReadOnly",
+          "childRenderer": {
+            "label": "Super Secret Number",
+            "renderer": "defaultNumber"
+          }
+        },
+        "MoreSecretNumbers": {
+          "label": "More Secret Numbers",
+          "renderer": "defaultList",
+          "elementRenderer": {
+            "renderer": "ReadOnly",
+            "childRenderer": {
+              "label": "Super Secret Number",
+              "renderer": "defaultNumber"
+            }
+          }
+        },
         "FullName": {
           "label": "full Name",
           "renderer": "defaultTuple2",
@@ -1225,7 +1262,10 @@
               {
                 "kind": "fieldLookup",
                 "operands": [
-                  { "kind": "varLookup", "varName": "global" },
+                  {
+                    "kind": "varLookup",
+                    "varName": "global"
+                  },
                   "ERP"
                 ]
               },
@@ -1241,7 +1281,10 @@
                       {
                         "kind": "fieldLookup",
                         "operands": [
-                          { "kind": "varLookup", "varName": "sapFields" },
+                          {
+                            "kind": "varLookup",
+                            "varName": "sapFields"
+                          },
                           "Value"
                         ]
                       },
@@ -1254,7 +1297,10 @@
                           "body": {
                             "kind": "fieldLookup",
                             "operands": [
-                              { "kind": "varLookup", "varName": "s2Fields" },
+                              {
+                                "kind": "varLookup",
+                                "varName": "s2Fields"
+                              },
                               "S2OnlyField"
                             ]
                           }
@@ -1269,7 +1315,10 @@
                           "body": {
                             "kind": "fieldLookup",
                             "operands": [
-                              { "kind": "varLookup", "varName": "s3Fields" },
+                              {
+                                "kind": "varLookup",
+                                "varName": "s3Fields"
+                              },
                               "S3OnlyField"
                             ]
                           }
@@ -1284,7 +1333,10 @@
                           "body": {
                             "kind": "fieldLookup",
                             "operands": [
-                              { "kind": "varLookup", "varName": "s4Fields" },
+                              {
+                                "kind": "varLookup",
+                                "varName": "s4Fields"
+                              },
                               "S4OnlyField"
                             ]
                           }
@@ -1297,12 +1349,20 @@
               {
                 "kind": "caseName",
                 "caseName": "ERPBC",
-                "handler": { "kind": "lambda", "parameter": "_", "body": false }
+                "handler": {
+                  "kind": "lambda",
+                  "parameter": "_",
+                  "body": false
+                }
               },
               {
                 "kind": "caseName",
                 "caseName": "ERPFAndO",
-                "handler": { "kind": "lambda", "parameter": "_", "body": false }
+                "handler": {
+                  "kind": "lambda",
+                  "parameter": "_",
+                  "body": false
+                }
               }
             ]
           }
@@ -1376,7 +1436,10 @@
           "disabled": {
             "kind": "fieldLookup",
             "operands": [
-              { "kind": "varLookup", "varName": "local" },
+              {
+                "kind": "varLookup",
+                "varName": "local"
+              },
               "SubscribeToNewsletter"
             ]
           }
@@ -1753,6 +1816,8 @@
                   "Category",
                   "FullName",
                   "Birthday",
+                  "SuperSecretNumber",
+                  "MoreSecretNumbers",
                   "Gender",
                   "Emails",
                   "Dependants",

@@ -11,6 +11,7 @@ import { ListDispatcher } from "./domains/list/state";
 import { MapDispatcher } from "./domains/map/state";
 import { MultiSelectionDispatcher } from "./domains/multiSelection/state";
 import { OneDispatcher } from "./domains/one/state";
+import { ReadOnlyDispatcher } from "./domains/readOnly/state";
 import { RecordDispatcher } from "./domains/record/state";
 import { LookupDispatcher } from "./domains/lookup/state";
 import { SingleSelectionDispatcher } from "./domains/singleSelectionDispatcher/state";
@@ -133,38 +134,45 @@ export const Dispatcher = {
                             isInlined ?? true,
                             tableApi,
                           )
-                        : renderer.kind == "sumRenderer" ||
-                            renderer.kind == "sumUnitDateRenderer"
-                          ? SumDispatcher.Operations.Dispatch(
+                        : renderer.kind == "readOnlyRenderer"
+                          ? ReadOnlyDispatcher.Operations.Dispatch(
                               renderer,
                               dispatcherContext,
                               isInlined ?? true,
                               tableApi,
                             )
-                          : renderer.kind == "tableRenderer"
-                            ? TableDispatcher.Operations.Dispatch(
+                          : renderer.kind == "sumRenderer" ||
+                              renderer.kind == "sumUnitDateRenderer"
+                            ? SumDispatcher.Operations.Dispatch(
                                 renderer,
                                 dispatcherContext,
-                                tableApi,
                                 isInlined ?? true,
+                                tableApi,
                               )
-                            : renderer.kind == "tupleRenderer"
-                              ? TupleDispatcher.Operations.Dispatch(
+                            : renderer.kind == "tableRenderer"
+                              ? TableDispatcher.Operations.Dispatch(
                                   renderer,
                                   dispatcherContext,
-                                  isInlined ?? true,
                                   tableApi,
+                                  isInlined ?? true,
                                 )
-                              : renderer.kind == "unionRenderer"
-                                ? UnionDispatcher.Operations.Dispatch(
+                              : renderer.kind == "tupleRenderer"
+                                ? TupleDispatcher.Operations.Dispatch(
                                     renderer,
                                     dispatcherContext,
-                                    isNested,
+                                    isInlined ?? true,
                                     tableApi,
                                   )
-                                : ValueOrErrors.Default.throwOne(
-                                    `unknown renderer ${renderer.kind}`,
-                                  );
+                                : renderer.kind == "unionRenderer"
+                                  ? UnionDispatcher.Operations.Dispatch(
+                                      renderer,
+                                      dispatcherContext,
+                                      isNested,
+                                      tableApi,
+                                    )
+                                  : ValueOrErrors.Default.throwOne(
+                                      `unknown renderer ${renderer.kind}`,
+                                    );
     },
   },
 };

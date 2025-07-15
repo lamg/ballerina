@@ -592,6 +592,20 @@ const entityApis: EntityApis = {
             Birthday: new Date(
               Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
             ).toISOString(),
+            SuperSecretNumber: {
+              ReadOnly: 123123,
+            },
+            MoreSecretNumbers: [
+              {
+                ReadOnly: 15651,
+              },
+              {
+                ReadOnly: 15651,
+              },
+              {
+                ReadOnly: 15651,
+              },
+            ],
             SubscribeToNewsletter: Math.random() > 0.5,
             FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
