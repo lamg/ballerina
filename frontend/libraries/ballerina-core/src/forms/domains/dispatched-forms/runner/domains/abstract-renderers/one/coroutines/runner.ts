@@ -33,7 +33,9 @@ export const initializeOneRunner = <
       // if the value is some, we already have something to pass to the renderers
       // -> we don't have to run the initialization coroutine
       // if the inner value is unit, we are rendering a partial one
-      props.context.value.kind === "option" && !props.context.value.isSome,
+      props.context.value.kind === "option" &&
+      !props.context.value.isSome &&
+      props.context.getApi != undefined,
   });
 
 export const initializeStreamRunner = <
@@ -45,7 +47,9 @@ export const initializeStreamRunner = <
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(initializeStream<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
-    runFilter: (props) => props.context.customFormState.stream.kind === "r",
+    runFilter: (props) =>
+      props.context.customFormState.stream.kind === "r" &&
+      props.context.customFormState.getChunkWithParams !== undefined,
   });
 
 export const oneTableDebouncerRunner = <
@@ -60,7 +64,7 @@ export const oneTableDebouncerRunner = <
     runFilter: (props) =>
       Debounced.Operations.shouldCoroutineRun(
         props.context.customFormState.streamParams,
-      ),
+      ) && props.context.customFormState.getChunkWithParams !== undefined,
   });
 
 export const oneTableLoaderRunner = <

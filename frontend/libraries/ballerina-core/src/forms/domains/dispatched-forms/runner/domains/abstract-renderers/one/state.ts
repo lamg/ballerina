@@ -43,7 +43,7 @@ export type OneAbstractRendererReadonlyContext<
   CustomPresentationContext,
   ExtraContext
 > & {
-  getApi: BasicFun<Guid, Promise<unknown>>;
+  getApi?: BasicFun<Guid, Promise<unknown>>;
   fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
   remoteEntityVersionIdentifier: string;
 };
@@ -55,19 +55,23 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
     streamParams: Debounced<Value<Map<string, string>>>;
     status: "open" | "closed";
     stream: Sum<ValueInfiniteStreamState, "not initialized">;
-    getChunkWithParams: BasicFun<
-      string,
-      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-    >;
+    getChunkWithParams:
+      | BasicFun<
+          string,
+          BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+        >
+      | undefined;
   };
 };
 
 export const OneAbstractRendererState = {
   Default: (
-    getChunk: BasicFun<
-      string,
-      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-    >,
+    getChunk:
+      | BasicFun<
+          string,
+          BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+        >
+      | undefined,
   ): OneAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
