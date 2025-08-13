@@ -441,7 +441,8 @@ module Model =
     | ManyLinkedUnlinkedRenderer of
       {| Many: Renderer<'ExprExtension, 'ValueExtension>
          Linked: NestedRenderer<'ExprExtension, 'ValueExtension>
-         Unlinked: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+         Unlinked: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
+         ManyApiId: Option<Choice<TableApiId, ExprTypeId * string>> |}
     | ManyAllRenderer of
       {| Many: Renderer<'ExprExtension, 'ValueExtension>
          Element: NestedRenderer<'ExprExtension, 'ValueExtension> |}
