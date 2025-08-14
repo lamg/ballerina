@@ -2,12 +2,16 @@ package ballerina
 
 type Chunk[T any] struct {
 	Values  []T
+	From    int
+	To      int
 	HasMore bool
 }
 
-func NewChunk[T any](values []T, hasMore bool) Chunk[T] {
+func NewChunk[T any](values []T, from, to int, hasMore bool) Chunk[T] {
 	return Chunk[T]{
 		Values:  values,
+		From:    from,
+		To:      to,
 		HasMore: hasMore,
 	}
 }
