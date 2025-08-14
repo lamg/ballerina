@@ -5,8 +5,6 @@ import (
 )
 
 type Sum[a any, b any] struct {
-	// NOTE: Important: all of these attributes must be private.
-	// Getting values out of Sum can only be done through Fold
 	isRight bool
 
 	left  a
