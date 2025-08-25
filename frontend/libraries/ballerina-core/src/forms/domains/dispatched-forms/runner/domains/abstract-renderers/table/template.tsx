@@ -33,10 +33,21 @@ import {
   unit,
   ValueUnit,
   TableAbstractRendererSelectedDetailRow,
+  TableApiFiltering,
+  ValueFilter,
+  CommonAbstractRendererViewOnlyReadonlyContext,
+  FilterType,
+  ListRepo,
+  Updater,
+  SumNType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
-import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
+import {
+  TableInitialiseFiltersAndSortingRunner,
+  TableReinitialiseRunner,
+  TableRunner,
+} from "./coroutines/runner";
 
 const EmbeddedValueInfiniteStreamTemplate = <
   CustomPresentationContext = Unit,
@@ -97,6 +108,31 @@ export const TableAbstractRenderer = <
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
+  Filters: Map<
+    string,
+    {
+      template: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        > &
+          CommonAbstractRendererState,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected
+      >;
+      type: DispatchParsedType<any>;
+      GetDefaultValue: () => PredicateValue;
+      GetDefaultState: () => CommonAbstractRendererState;
+      filters: SumNType<any>;
+    }
+  >,
+  parseToApiByType: (
+    type: DispatchParsedType<any>,
+    value: PredicateValue,
+    state: any,
+  ) => ValueOrErrors<any, string>,
 ): Template<
   TableAbstractRendererReadonlyContext<
     CustomPresentationContext,
@@ -115,6 +151,11 @@ export const TableAbstractRenderer = <
     CustomPresentationContext,
     ExtraContext
   >();
+  const InstantiatedEmbeddedParseFromApiByTypeTemplate =
+    TableInitialiseFiltersAndSortingRunner<
+      CustomPresentationContext,
+      ExtraContext
+    >(Filters.map(({ filters }) => filters));
   const InstantiatedEmbeddedValueInfiniteStreamTemplate =
     EmbeddedValueInfiniteStreamTemplate<
       CustomPresentationContext,
@@ -477,6 +518,48 @@ export const TableAbstractRenderer = <
 
   const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
+  const EmbeddedAllowedFilters = Filters.map((filter, columnName) => ({
+    ...filter,
+    filters: filter.filters.args as Array<FilterType<any>>,
+    template: (index: number) =>
+      filter.template
+        .mapContext<
+          CommonAbstractRendererReadonlyContext<
+            DispatchParsedType<any>,
+            PredicateValue,
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState
+        >((_) => ({
+          value: _.value,
+          locked: false,
+          disabled: false,
+          bindings: _.bindings,
+          extraContext: _.extraContext,
+          type: filter.type,
+          label: _.label,
+          tooltip: undefined,
+          details: undefined,
+          customPresentationContext: undefined,
+          remoteEntityVersionIdentifier: "",
+          domNodeAncestorPath: "",
+          typeAncestors: [],
+          lookupTypeAncestorNames: [],
+          ...(_.customFormState.filterStates.get(columnName)?.get(index) ??
+            filter.GetDefaultState()),
+        }))
+        .mapState<TableAbstractRendererState>((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children.filterStates(
+            MapRepo.Updaters.upsert(
+              columnName,
+              () => List([filter.GetDefaultState()]),
+              ListRepo.Updaters.update(index, Updater(_)),
+            ),
+          ),
+        ),
+  }));
+
   return Template.Default<
     TableAbstractRendererReadonlyContext<
       CustomPresentationContext,
@@ -612,10 +695,13 @@ export const TableAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              loadMore: () =>
-                props.setState(
-                  TableAbstractRendererState.Updaters.Template.loadMore(),
-                ),
+              loadMore: () => {
+                if (props.context.customFormState.isFilteringInitialized) {
+                  props.setState(
+                    TableAbstractRendererState.Updaters.Template.loadMore(),
+                  );
+                }
+              },
               selectDetailView: (rowId: string) => {
                 const chunkIndex =
                   ValueInfiniteStreamState.Operations.getChunkIndexForValue(
@@ -748,6 +834,37 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
+              updateFilters: (filters: Map<string, List<ValueFilter>>) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.updateFilters(
+                    filters,
+                    Filters.map(({ filters }) => filters),
+                    parseToApiByType,
+                  ),
+                );
+              },
+              addSorting: (
+                columnName: string,
+                direction: "Ascending" | "Descending" | undefined,
+              ) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.addSorting(
+                    columnName,
+                    direction,
+                    Filters.map(({ filters }) => filters),
+                    parseToApiByType,
+                  ),
+                );
+              },
+              removeSorting: (columnName: string) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.removeSorting(
+                    columnName,
+                    Filters.map(({ filters }) => filters),
+                    parseToApiByType,
+                  ),
+                );
+              },
               reinitialize: () =>
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.shouldReinitialize(
@@ -757,6 +874,12 @@ export const TableAbstractRenderer = <
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}
+            AllowedFilters={EmbeddedAllowedFilters}
+            AllowedSorting={props.context.sorting}
+            HighlightedFilters={props.context.highlightedFilters}
+            isFilteringSortAndLoadingEnabled={
+              props.context.customFormState.isFilteringInitialized
+            }
           />
         </IdProvider>
       </>
@@ -765,5 +888,6 @@ export const TableAbstractRenderer = <
     InstantiatedTableRunner,
     InstantiatedTableReinitialiseRunner,
     InstantiatedEmbeddedValueInfiniteStreamTemplate,
+    InstantiatedEmbeddedParseFromApiByTypeTemplate,
   ]);
 };

@@ -646,7 +646,25 @@
     "tables": {
       "ActiveUsersApi": {
         "type": "User",
-        "methods": ["move", "duplicate"]
+        "methods": ["move", "duplicate"],
+        "sorting": ["Name", "City"],
+        "highlightedFilters": ["Name"],
+        "filtering": {
+          "Name": {
+            "display": {
+              "renderer": "defaultString"
+            },
+            "type": "string",
+            "operators": ["=", "contains", "startsWith"]
+          },
+          "Surname": {
+            "display": {
+              "renderer": "defaultString"
+            },
+            "type": "string",
+            "operators": ["=", "contains", "=null", "!=null"]
+          }
+        }
       },
       "ActiveFriendsApi": {
         "type": "Friend",
