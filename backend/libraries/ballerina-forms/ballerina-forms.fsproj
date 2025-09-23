@@ -26,6 +26,7 @@
         <Compile Include="Parser/Runner.fs" />
         <Compile Include="Validator.fs" />
         <Compile Include="Next\Model.fs" />
+        <Compile Include="Next\V2Validator.fs" />
     </ItemGroup>
 
     <ItemGroup>
