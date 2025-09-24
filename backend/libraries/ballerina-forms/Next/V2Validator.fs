@@ -35,6 +35,8 @@ module V2Validator =
     | ExprTypeKind.Star -> Kind.Star
     | ExprTypeKind.Arrow(input, output) -> Kind.Arrow(kindOf input, kindOf output)
 
+  let translationOverrideMessage label = failwith $"TranslationOverride {label} is not supported in V2 translation."
+
   let rec v2ofV1 (t: ExprType) =
     let applyGeneric typeName args =
       args
@@ -109,7 +111,7 @@ module V2Validator =
       )
     | ExprType.GenericApplicationType(generic, argument) -> TypeExpr.Apply(v2ofV1 generic, v2ofV1 argument)
     | ExprType.TranslationOverride label ->
-      failwith $"TranslationOverride {label} is not supported in V2 translation."
+      failwith (translationOverrideMessage label)
 
   type FormConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
@@ -120,23 +122,31 @@ module V2Validator =
       : Sum<Unit, Errors> =
       state {
         do! typeContextFromSpecBody spec.Body
-        let! v1Translated, _ = formConfig.Body |> FormBody.FormDeclarationType |> v2ofV1 |> TypeExpr.Eval
-        let! v2Schema = Schema.Model.Schema.SchemaEval spec.Body.Schema
-        let! env = state.GetState()
+        let formDeclType = FormBody.FormDeclarationType formConfig.Body
+        match formDeclType with
+        | ExprType.TranslationOverride label ->
+          return!
+            translationOverrideMessage label
+            |> Errors.Singleton
+            |> state.Throw
+        | _ ->
+          let! v1Translated, _ = formDeclType |> v2ofV1 |> TypeExpr.Eval
+          let! v2Schema = Schema.Model.Schema.SchemaEval spec.Body.Schema
+          let! env = state.GetState()
 
-        match FormBody.FormDeclarationType formConfig.Body with
-        | ExprType.LookupType id ->
-          let entity, _ = ctx.Apis.Entities[id.VarName]
+          match FormBody.FormDeclarationType formConfig.Body with
+          | ExprType.LookupType id ->
+            let entity, _ = ctx.Apis.Entities[id.VarName]
 
-          let v2Type = v2Schema.Entities[entity.EntityName].Type
+            let v2Type = v2Schema.Entities[entity.EntityName].Type
 
-          let unifyResult =
-            TypeValue.Unify(v1Translated, v2Type) |> State.Run(env, UnificationState.Empty)
+            let unifyResult =
+              TypeValue.Unify(v1Translated, v2Type) |> State.Run(env, UnificationState.Empty)
 
-          match unifyResult with
-          | Sum.Left _ -> ()
-          | Sum.Right(errors, _) -> do! state.Throw errors
-        | _ -> ()
+            match unifyResult with
+            | Sum.Left _ -> ()
+            | Sum.Right(errors, _) -> do! state.Throw errors
+          | _ -> ()
       }
       |> State.Run(Eval.TypeExprEvalContext.Empty, Eval.TypeExprEvalState.Empty)
       |> function
