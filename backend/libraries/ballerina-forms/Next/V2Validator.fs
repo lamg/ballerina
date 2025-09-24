@@ -26,6 +26,7 @@ module V2Validator =
 
   let private wrapWithSymbolLets (names: List<string>) (body: TypeExpr) =
     let xs = List.distinct names
+    // foldBack is used to keep the order from names in the nested value Let(name0, (Let(name1, ...)))
     body
     |> List.foldBack (fun name acc -> TypeExpr.Let(name, TypeExpr.NewSymbol name, acc)) xs
 
