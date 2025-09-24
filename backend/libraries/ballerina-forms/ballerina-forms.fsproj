@@ -40,6 +40,7 @@
     <ItemGroup>
         <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
         <ProjectReference Include="..\ballerina-lang\ballerina-lang.fsproj" />
+        <ProjectReference Include="..\ballerina-data\ballerina-data.fsproj" />
     </ItemGroup>
 
 </Project>

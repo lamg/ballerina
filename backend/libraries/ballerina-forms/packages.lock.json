@@ -114,6 +114,11 @@
           "FSharp.Data.Runtime.Utilities": "6.6.0"
         }
       },
+      "MathNet.Numerics": {
+        "type": "Transitive",
+        "resolved": "6.0.0-beta2",
+        "contentHash": "ew55vr5MqCEokG0jRsndoRSPNxdDvSgGwhWyxEFhzc8EuGn3TNtSGKRppCcpHnwXtjFiUvFBN+BBo75yrdKOrQ=="
+      },
       "Microsoft.EntityFrameworkCore.Abstractions": {
         "type": "Transitive",
         "resolved": "9.0.7",
@@ -209,6 +214,15 @@
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0",
           "System.Text.Encodings.Web": "6.0.0"
+        }
+      },
+      "ballerina-data": {
+        "type": "Project",
+        "dependencies": {
+          "Ballerina.Cat": "[1.0.0, )",
+          "Ballerina.Lang": "[1.0.0, )",
+          "FSharp.Core": "[9.0.303, )",
+          "MathNet.Numerics": "[6.0.0-beta2, )"
         }
       },
       "Ballerina.Cat": {
