@@ -121,6 +121,19 @@ module Eval =
           match t with
           | TypeExpr.NewSymbol name -> return TypeSymbol.Create(Identifier.LocalScope name)
           | TypeExpr.Lookup v -> return! TypeExprEvalState.tryFindSymbol v |> state.OfStateReader
+          | TypeExpr.Let(x, t_x, rest) ->
+            return!
+              state.Either
+                (state {
+                  let! t_x = !!t_x
+                  do! TypeExprEvalState.bindType x t_x
+                  return! !rest
+                })
+                (state {
+                  let! s_x = !t_x
+                  do! TypeExprEvalState.bindSymbol x s_x
+                  return! !rest
+                })
           | TypeExpr.Apply(f, a) ->
             let! f, f_k = !!f
             do! Kind.AsArrow f_k |> state.OfSum |> state.Ignore
@@ -130,10 +143,7 @@ module Eval =
 
             return! !body
           | _ ->
-            return!
-              $"Error: invalid type expression when evaluating for symbol, got {t}"
-              |> Errors.Singleton
-              |> state.Throw
+            return TypeSymbol.Create(Identifier.LocalScope(Guid.CreateVersion7().ToString()))
         }
 
     static member Eval: TypeExprEval =
