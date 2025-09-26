@@ -129,6 +129,20 @@
           "FSharp.Data.Runtime.Utilities": "6.6.0"
         }
       },
+      "FSharp.SystemTextJson": {
+        "type": "Transitive",
+        "resolved": "1.4.36",
+        "contentHash": "1xLk0SBF1nedD74B77rcArjD2d+DeZwbNI7BVCAyKwIBERo1VoX8Mf4AtX0OV2L3ZeM/XS1b6BuhXCyoh0KBnw==",
+        "dependencies": {
+          "FSharp.Core": "4.7.0",
+          "System.Text.Json": "6.0.10"
+        }
+      },
+      "MathNet.Numerics": {
+        "type": "Transitive",
+        "resolved": "6.0.0-beta2",
+        "contentHash": "ew55vr5MqCEokG0jRsndoRSPNxdDvSgGwhWyxEFhzc8EuGn3TNtSGKRppCcpHnwXtjFiUvFBN+BBo75yrdKOrQ=="
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.22.0",
@@ -310,10 +324,53 @@
           "System.Collections.Immutable": "8.0.0"
         }
       },
+      "System.Runtime.CompilerServices.Unsafe": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
+      },
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "System.Text.Json": {
+        "type": "Transitive",
+        "resolved": "6.0.10",
+        "contentHash": "NSB0kDipxn2ychp88NXWfFRFlmi1bst/xynOutbnpEfRCT9JZkZ7KOmF/I/hNKo2dILiMGnqblm+j1sggdLB9g==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0",
+          "System.Text.Encodings.Web": "6.0.0"
+        }
+      },
+      "ballerina-data": {
+        "type": "Project",
+        "dependencies": {
+          "Ballerina.Cat": "[1.0.0, )",
+          "Ballerina.Lang": "[1.0.0, )",
+          "FSharp.Core": "[9.0.303, )",
+          "MathNet.Numerics": "[6.0.0-beta2, )"
+        }
+      },
       "Ballerina.Cat": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"
+        }
+      },
+      "Ballerina.Forms": {
+        "type": "Project",
+        "dependencies": {
+          "Ballerina.Cat": "[1.0.0, )",
+          "Ballerina.Lang": "[1.0.0, )",
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "FSharp.SystemTextJson": "[1.4.36, )",
+          "Microsoft.EntityFrameworkCore": "[9.0.7, )",
+          "ballerina-data": "[1.0.0, )"
         }
       },
       "Ballerina.Lang": {
@@ -335,10 +392,55 @@
         }
       }
     },
-    "net9.0/linux-arm64": {},
-    "net9.0/linux-x64": {},
-    "net9.0/osx-arm64": {},
-    "net9.0/osx-x64": {},
-    "net9.0/win-x64": {}
+    "net9.0/linux-arm64": {
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      }
+    },
+    "net9.0/linux-x64": {
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      }
+    },
+    "net9.0/osx-arm64": {
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      }
+    },
+    "net9.0/osx-x64": {
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      }
+    },
+    "net9.0/win-x64": {
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      }
+    }
   }
 }

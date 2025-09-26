@@ -115,7 +115,6 @@ module V2Validator =
 
   type FormConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (_config: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
       (spec: Spec)
