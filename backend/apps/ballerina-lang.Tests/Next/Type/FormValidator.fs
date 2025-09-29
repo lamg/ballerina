@@ -61,13 +61,12 @@ let ``LangNext-Validate form compatibility against V2 types`` () =
       Body =
         { Schema =
             { Entities =
-                Map.ofList [
-                  ( formEntityName,
-                    { Type = Identifier.LocalScope formEntityName |> TypeExpr.Lookup
-                      Methods = Set.ofList [ EntityMethod.Get ]
-                      Updaters = []
-                      Predicates = Map.empty } )
-                ]
+                Map.ofList
+                  [ (formEntityName,
+                     { Type = Identifier.LocalScope formEntityName |> TypeExpr.Lookup
+                       Methods = Set.ofList [ EntityMethod.Get ]
+                       Updaters = []
+                       Predicates = Map.empty }) ]
               Lookups = Map.empty }
           TypesV2 = [ (formEntityName, customerTypeExpr) ] } }
 
@@ -79,12 +78,8 @@ let ``LangNext-Validate form compatibility against V2 types`` () =
           { FormApis<unit, unit>.Empty with
               Entities = Map.ofList [ (formEntityName, (entityApi, Set.empty<CrudMethod>)) ] } }
 
-  let result =
-    FormConfig<unit, unit>.Validate
-      ctx
-      formConfig
-      spec
+  let result = FormConfig<unit, unit>.Validate ctx formConfig spec
 
   match result with
-  | Sum.Left () -> ()
-  | Sum.Right errors -> Assert.Fail($"Expected validation to succeed but got errors: {errors}")
+  | Sum.Left() -> ()
+  | Sum.Right errors -> Assert.Fail $"Expected validation to succeed but got errors: {errors}"
